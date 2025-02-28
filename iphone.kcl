@@ -1,0 +1,277 @@
+radius = 19.23
+
+totalWidth = 71.45
+totalLength = 149.61
+nonArcLen = -totalLength+(radius*2)
+thickness = 8.25
+
+edgeRadius = 1.84
+
+lengthWithoutCurve = totalLength - (2.41*2*2)
+widthWithoutCurve = totalWidth- (2.41*2*2)
+
+
+// ------------------body thickness -----------
+
+allpoints = [
+  [0, 19.23],
+  [0.01, 17.41],
+  [0.02, 15.58],
+  [0.04, 13.75],
+  [0.17, 11.92],
+  [0.43, 10.12],
+  [0.89, 8.36],
+  [1.6, 6.68],
+  [2.56, 5.13],
+  [3.74, 3.74],
+  [5.13, 2.56],
+  [6.68, 1.6],
+  [8.36, 0.89],
+  [10.12, 0.43],
+  [11.92, 0.17],
+  [13.75, 0.04],
+  [15.58, 0.02],
+  [17.41, 0.01],
+  [19.23, 0]
+]
+
+
+fn offset(pts, startIndex, endIndex) {
+  r0 = pts[startIndex]
+  xx0 = r0[0]
+  yy0 = r0[1]
+  r1 = pts[endIndex]
+  xx1 = r1[0]
+  yy1 = r1[1]
+  return [xx1 - xx0, yy1 - yy0]
+}
+
+
+fn rotatedOffset(pts, startIndex, endIndex) {
+  r0 = pts[startIndex]
+  xx0 = r0[0]
+  yy0 = r0[1]
+  r1 = pts[endIndex]
+  xx1 = r1[0]
+  yy1 = r1[1]
+
+  // Apply 90-degree counterclockwise rotation
+  newX = -(yy1 - yy0)
+  newY = xx1 - xx0
+
+  return [newX, newY]
+}
+
+fn rotatedOffset180(pts, startIndex, endIndex) {
+  r0 = pts[startIndex]
+  xx0 = r0[0]
+  yy0 = r0[1]
+  r1 = pts[endIndex]
+  xx1 = r1[0]
+  yy1 = r1[1]
+
+  // Compute the relative offset
+  dx = xx1 - xx0
+  dy = yy1 - yy0
+
+  // Apply 180-degree rotation
+  newX = -dx
+  newY = -dy
+
+  return [newX, newY]
+}
+
+fn rotatedOffset270(pts, startIndex, endIndex) {
+  r0 = pts[startIndex]
+  xx0 = r0[0]
+  yy0 = r0[1]
+  r1 = pts[endIndex]
+  xx1 = r1[0]
+  yy1 = r1[1]
+
+  // Compute the relative offset
+  dx = xx1 - xx0
+  dy = yy1 - yy0
+
+  // Apply 270-degree (90-degree clockwise) rotation
+  newX = dy
+  newY = -dx
+
+  return [newX, newY]
+}
+
+
+fn curves(pts, offsetFunc, z) {
+  return bezierCurve({
+       to = offsetFunc(pts, 0, 3),
+       control1 = offsetFunc(pts, 0, 1),
+       control2 = offsetFunc(pts, 0, 2),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 3, 6),
+       control1 = offsetFunc(pts, 3, 4),
+       control2 = offsetFunc(pts, 3, 5),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 6, 9),
+       control1 = offsetFunc(pts, 6, 7),
+       control2 = offsetFunc(pts, 6, 8),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 9, 12),
+       control1 = offsetFunc(pts, 9, 10),
+       control2 = offsetFunc(pts, 9, 11),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 12, 15),
+       control1 = offsetFunc(pts, 12, 13),
+       control2 = offsetFunc(pts, 12, 14),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 15, 18),
+       control1 = offsetFunc(pts, 15, 16),
+       control2 = offsetFunc(pts, 15, 17),
+     }, %)
+}
+
+
+
+
+fn iphoneCurve(x, y, z){
+  return startSketchOn(offsetPlane('XY', offset = z))
+  |> startProfileAt([x,y], %)
+  |> yLine(-totalLength+(radius*2), %)
+  |> curves(allpoints, offset,%)
+  |> xLine(totalWidth-(radius*2), %)
+  |> curves(allpoints, rotatedOffset,%)
+  |> yLine(totalLength-(radius*2), %)
+  |> curves(allpoints, rotatedOffset180,%)
+  |> xLine(-totalWidth+(radius*2), %)
+  |> curves(allpoints, rotatedOffset270, %)
+  |> close()
+  |> extrude(length=thickness-(edgeRadius*2))
+}
+
+
+// phone = iphoneCurve(0,0, 0)
+// phone = iphoneCurve(-(totalWidth)/2, (totalLength+(radius*2))/2, 0)
+
+// --------------
+
+edgePoints = [
+ [2*0,1.84],
+ [2*0.07,2.86],
+ [2*0.58,3.76],
+ [2*1.47,4.10],
+ [2*2.41,4.12],
+]
+
+moreEdgePoints = [
+  [0, 0.0],
+  [0.01, 0.34],
+  [0.03, 0.68],
+  [0.14, 1.02],
+  [0.37, 1.36],
+  [0.71, 1.67],
+  [1.16, 1.92],
+  [1.7, 2.1],
+  [2.31, 2.2],
+  [2.94, 2.26],
+  [3.57, 2.28],
+  [4.2, 2.29],
+  [4.82, 2.28],
+]
+
+
+
+fn zRefLine(x, y){
+  return startSketchOn(offsetPlane('XY', offset = y))
+  |> startProfileAt([x,0], %)
+  |> line(endAbsolute=[x,nonArcLen])
+}
+
+fn zRefArc(x, y){
+  return startSketchOn(offsetPlane('XZ', offset = 0))
+  |> startProfileAt([x,0], %)
+  |> bezierCurve({
+       to = moreEdgePoints[2],
+       control1 = moreEdgePoints[0],
+       control2 = moreEdgePoints[1],
+     }, %)
+  // |> line(endAbsolute=[x,nonArcLen])
+}
+
+zRefArc(edgePoints[0][0], edgePoints[0][1])
+// plane2  = offsetPlane('XZ', offset = edgePoints[0][1])
+
+// zRefLine(edgePoints[0][0], edgePoints[0][1])
+// zRefLine(edgePoints[1][0], edgePoints[1][1])
+// zRefLine(edgePoints[2][0], edgePoints[2][1])
+// zRefLine(edgePoints[3][0], edgePoints[3][1])
+// zRefLine(edgePoints[4][0], edgePoints[4][1])
+
+
+fn edgeBezCurves(pts, offsetFunc, z) {
+  return bezierCurve({
+       to = offsetFunc(pts, 0, 3),
+       control1 = offsetFunc(pts, 0, 1),
+       control2 = offsetFunc(pts, 0, 2),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 3, 6),
+       control1 = offsetFunc(pts, 3, 4),
+       control2 = offsetFunc(pts, 3, 5),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 6, 9),
+       control1 = offsetFunc(pts, 6, 7),
+       control2 = offsetFunc(pts, 6, 8),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 9, 12),
+       control1 = offsetFunc(pts, 9, 10),
+       control2 = offsetFunc(pts, 9, 11),
+     }, %)
+}
+
+fn edgeBezCurvesInverted(pts, offsetFunc, z) {
+  return bezierCurve({
+       to = offsetFunc(pts, 0, 3),
+       control1 = offsetFunc(pts, 0, 1),
+       control2 = offsetFunc(pts, 0, 2),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 3, 6),
+       control1 = offsetFunc(pts, 3, 4),
+       control2 = offsetFunc(pts, 3, 5),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 6, 9),
+       control1 = offsetFunc(pts, 6, 7),
+       control2 = offsetFunc(pts, 6, 8),
+     }, %)
+  |> bezierCurve({
+       to = offsetFunc(pts, 9, 12),
+       control1 = offsetFunc(pts, 9, 10),
+       control2 = offsetFunc(pts, 9, 11),
+     }, %)
+}
+
+
+fn edgeCurves(x, y, z){
+  return startSketchOn(offsetPlane('XZ', offset = z))
+  |> startProfileAt([x,y], %)
+  |> edgeBezCurves(moreEdgePoints, offset,%)
+  |> xLine(widthWithoutCurve/2, %)
+  |> edgeBezCurvesInverted(moreEdgePoints, offset,%)
+  // |> xLine(totalWidth-(radius*2), %)
+  // |> curves(allpoints, rotatedOffset,%)
+  // |> yLine(totalLength-(radius*2), %)
+  // |> curves(allpoints, rotatedOffset180,%)
+  // |> xLine(-totalWidth+(radius*2), %)
+  // |> curves(allpoints, rotatedOffset270, %)
+  // |> close()
+  // |> extrude(length=thickness-(edgeRadius*2))
+}
+
+edgeCurve = edgeCurves(0,thickness,0)
