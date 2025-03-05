@@ -2,6 +2,7 @@
 // For technical specifications, see page 296-299
 // https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
 
+
 cornerCurveRadius = 19.23
 totalWidth = 71.45
 totalLength = 149.61
@@ -9,14 +10,13 @@ bodyLength = -totalLength + cornerCurveRadius * 2
 
 edgeCurveHeight = 2.28
 totalThickness = 8.25
-bodyThickness = (totalThickness-(edgeCurveHeight*2))
+bodyThickness = totalThickness - (edgeCurveHeight * 2)
 
-
-lengthWithoutCurve = totalLength - (cornerCurveRadius* 2)
+lengthWithoutCurve = totalLength - (cornerCurveRadius * 2)
 widthWithoutCurve = totalWidth - (cornerCurveRadius * 2)
 
 edgeCurveWidth = 2.41
-widthWithoutEdgeCurve = totalWidth - (edgeCurveWidth*2)
+widthWithoutEdgeCurve = totalWidth - (edgeCurveWidth * 2)
 
 // 0th and every third point are documented points.
 // intermediate points are interpolated
@@ -122,7 +122,7 @@ fn iphoneBody(x, y, z) {
     |> extrude(length = bodyThickness)
 }
 
-phoneBody = iphoneBody(0,0, 0)
+phoneBody = iphoneBody(0, 0, 0)
 
 // -------------- Edge --------------
 // Edge curve points from diagram
@@ -150,20 +150,23 @@ moreEdgePoints = [
   [1.47, 2.26],
   [1.79, 2.28],
   [2.1, 2.28],
-  [2.41, 2.28],
+  [2.41, 2.28]
 ]
 
-
 fn reversePts(xy) {
-  x0 = xy[0]
-  x1 = xy[1]
-  return [-x0, x1]
+  return [-xy[0], xy[1]]
 }
 
 fn reversePtsY(xy) {
-  x0 = xy[0]
-  x1 = xy[1]
-  return [-x0, -x1]
+  return [-xy[0], -xy[1]]
+}
+
+fn negativeY(xYpts) {
+  return [xYpts[0], -xYpts[1]]
+}
+
+fn negativeX(xYpts) {
+  return [-xYpts[0], xYpts[1]]
 }
 
 fn edgeBezCurves(pts, offsetFunc, z) {
@@ -204,7 +207,6 @@ fn reverseRotatedOffset180(pts, startIndex, endIndex) {
     |> reversePts(%)
 }
 
-
 fn edgeCurves(points, x, y, z) {
   rad = cornerCurveRadius - edgeCurveWidth
   return startSketchOn(offsetPlane('XZ', offset = z))
@@ -213,18 +215,6 @@ fn edgeCurves(points, x, y, z) {
     |> xLine(-rad, %)
     |> yLine(-edgeCurveHeight, %)
     |> close()
-}
-
-fn negativeY(xYpts) {
-  x = xYpts[0]
-  y = xYpts[1]
-  return [x, -y]
-}
-
-fn negativeX(xYpts) {
-  x = xYpts[0]
-  y = xYpts[1]
-  return [-x, y]
 }
 
 fn negativeYList(pts) {
@@ -236,9 +226,7 @@ fn negativeXList(pts) {
 }
 
 fn pairOffsetxy(pair, x, y) {
-  xx = pair[0]
-  yy = pair[1]
-  return [xx+x, yy+y]
+  return [pair[0] + x, pair[1] + y]
 }
 fn pairOffsetX(xy, xOffset) {
   return pairOffsetxy(xy, xOffset, 0)
@@ -247,41 +235,26 @@ fn pairOffsetY(xy, yOffset) {
   return pairOffsetxy(xy, 0, yOffset)
 }
 
-fn listIdx(list, idx) {
-  return list[idx]
-}
-
 // Generate a bezier curve segment for a sweep Path
 fn generateBezierCurve(pts, offsetFunc, ptIdx, z) {
   return bezierCurve({
-         to = offsetFunc(pts, ptIdx, ptIdx+3),
-         control1 = offsetFunc(pts, ptIdx, ptIdx+1),
-         control2 = offsetFunc(pts, ptIdx, ptIdx+2)
-       }, %)
+    to = offsetFunc(pts, ptIdx, ptIdx + 3),
+    control1 = offsetFunc(pts, ptIdx, ptIdx + 1),
+    control2 = offsetFunc(pts, ptIdx, ptIdx + 2)
+  }, %)
 }
 
 // edgeCornerCurve draws a corner edge curve
 //
 // segment is the numeric segment [0-5] of the corner curve
 fn generateEdgeCornerCurve(segment) {
-  segmentStart = segment*3
-  startPoint = rotatedOffset180Func(
-    negativeXList(cornerCurvePoints),
-    0,
-    segmentStart)
+  segmentStart = segment * 3
+  startPoint = rotatedOffset180Func(  negativeXList(cornerCurvePoints), 0, segmentStart)
   sweepPath = startSketchOn(offsetPlane('XY', offset = bodyThickness))
     |> startProfileAt(startPoint, %)
-    |> generateBezierCurve(
-        negativeXList(cornerCurvePoints),
-        rotatedOffset180Func,
-        segmentStart,
-        %)
-  return edgeCurves(
-    negativeXList(moreEdgePoints),
-    startPoint[0],
-    bodyThickness,
-    -startPoint[1])
-    |> sweep(path =sweepPath)
+    |> generateBezierCurve(negativeXList(cornerCurvePoints), rotatedOffset180Func, segmentStart, %)
+  return edgeCurves(negativeXList(moreEdgePoints), startPoint[0], bodyThickness, -startPoint[1])
+    |> sweep(path = sweepPath)
 }
 
 // corner edge swept solids
@@ -291,3 +264,4 @@ generateEdgeCornerCurve(2)
 generateEdgeCornerCurve(3)
 generateEdgeCornerCurve(4)
 generateEdgeCornerCurve(5)
+
