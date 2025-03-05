@@ -1,19 +1,27 @@
-radius = 19.23
+// iPhone 16 Pro 3D model
+// For technical specifications, see page 296-299
+// https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
 
+cornerCurveRadius = 19.23
 totalWidth = 71.45
 totalLength = 149.61
-nonArcLen = -totalLength+(radius*2)
-thickness = 8.25
+bodyLength = -totalLength + cornerCurveRadius * 2
 
-edgeRadius = 1.84
-
-lengthWithoutCurve = totalLength - (2.41*2*2)
-widthWithoutCurve = totalWidth- (2.41*2*2)
+edgeCurveHeight = 2.28
+totalThickness = 8.25
+bodyThickness = (totalThickness-(edgeCurveHeight*2))
 
 
-// ------------------body thickness -----------
+lengthWithoutCurve = totalLength - (cornerCurveRadius* 2)
+widthWithoutCurve = totalWidth - (cornerCurveRadius * 2)
 
-allpoints = [
+edgeCurveWidth = 2.41
+widthWithoutEdgeCurve = totalWidth - (edgeCurveWidth*2)
+
+// 0th and every third point are documented points.
+// intermediate points are interpolated
+// TODO: migrate python midpoint interpolation to KCL
+cornerCurvePoints = [
   [0, 19.23],
   [0.01, 17.41],
   [0.02, 15.58],
@@ -35,8 +43,8 @@ allpoints = [
   [19.23, 0]
 ]
 
-
-fn offset(pts, startIndex, endIndex) {
+// offset returns the relative difference between two points in a list
+fn offsetFunc(pts, startIndex, endIndex) {
   r0 = pts[startIndex]
   xx0 = r0[0]
   yy0 = r0[1]
@@ -46,232 +54,240 @@ fn offset(pts, startIndex, endIndex) {
   return [xx1 - xx0, yy1 - yy0]
 }
 
-
-fn rotatedOffset(pts, startIndex, endIndex) {
-  r0 = pts[startIndex]
-  xx0 = r0[0]
-  yy0 = r0[1]
-  r1 = pts[endIndex]
-  xx1 = r1[0]
-  yy1 = r1[1]
-
-  // Apply 90-degree counterclockwise rotation
-  newX = -(yy1 - yy0)
-  newY = xx1 - xx0
-
-  return [newX, newY]
+// rotatedOffset returns the relative difference between two points in a list, rotated 90 degrees
+fn rotatedOffsetFunc(pts, startIndex, endIndex) {
+  offsetRes = offsetFunc(pts, startIndex, endIndex)
+  return [-offsetRes[1], offsetRes[0]]
 }
 
-fn rotatedOffset180(pts, startIndex, endIndex) {
-  r0 = pts[startIndex]
-  xx0 = r0[0]
-  yy0 = r0[1]
-  r1 = pts[endIndex]
-  xx1 = r1[0]
-  yy1 = r1[1]
-
-  // Compute the relative offset
-  dx = xx1 - xx0
-  dy = yy1 - yy0
-
-  // Apply 180-degree rotation
-  newX = -dx
-  newY = -dy
-
-  return [newX, newY]
+// rotatedOffset180 returns the relative difference between two points in a list, rotated 180 degrees
+fn rotatedOffset180Func(pts, startIndex, endIndex) {
+  offsetRes = offsetFunc(pts, startIndex, endIndex)
+  return [-offsetRes[0], -offsetRes[1]]
 }
 
-fn rotatedOffset270(pts, startIndex, endIndex) {
-  r0 = pts[startIndex]
-  xx0 = r0[0]
-  yy0 = r0[1]
-  r1 = pts[endIndex]
-  xx1 = r1[0]
-  yy1 = r1[1]
-
-  // Compute the relative offset
-  dx = xx1 - xx0
-  dy = yy1 - yy0
-
-  // Apply 270-degree (90-degree clockwise) rotation
-  newX = dy
-  newY = -dx
-
-  return [newX, newY]
+// rotatedOffset270 returns the relative difference between two points in a list, rotated 270 degrees
+fn rotatedOffset270Func(pts, startIndex, endIndex) {
+  offsetRes = offsetFunc(pts, startIndex, endIndex)
+  return [offsetRes[1], -offsetRes[0]]
 }
 
-
-fn curves(pts, offsetFunc, z) {
+// cornerBezierCurves returns siz corner bezier curves
+fn cornerBezierCurves(pts, offsetFunc, z) {
   return bezierCurve({
-       to = offsetFunc(pts, 0, 3),
-       control1 = offsetFunc(pts, 0, 1),
-       control2 = offsetFunc(pts, 0, 2),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 3, 6),
-       control1 = offsetFunc(pts, 3, 4),
-       control2 = offsetFunc(pts, 3, 5),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 6, 9),
-       control1 = offsetFunc(pts, 6, 7),
-       control2 = offsetFunc(pts, 6, 8),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 9, 12),
-       control1 = offsetFunc(pts, 9, 10),
-       control2 = offsetFunc(pts, 9, 11),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 12, 15),
-       control1 = offsetFunc(pts, 12, 13),
-       control2 = offsetFunc(pts, 12, 14),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 15, 18),
-       control1 = offsetFunc(pts, 15, 16),
-       control2 = offsetFunc(pts, 15, 17),
-     }, %)
+         to = offsetFunc(pts, 0, 3),
+         control1 = offsetFunc(pts, 0, 1),
+         control2 = offsetFunc(pts, 0, 2)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 3, 6),
+         control1 = offsetFunc(pts, 3, 4),
+         control2 = offsetFunc(pts, 3, 5)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 6, 9),
+         control1 = offsetFunc(pts, 6, 7),
+         control2 = offsetFunc(pts, 6, 8)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 9, 12),
+         control1 = offsetFunc(pts, 9, 10),
+         control2 = offsetFunc(pts, 9, 11)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 12, 15),
+         control1 = offsetFunc(pts, 12, 13),
+         control2 = offsetFunc(pts, 12, 14)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 15, 18),
+         control1 = offsetFunc(pts, 15, 16),
+         control2 = offsetFunc(pts, 15, 17)
+       }, %)
 }
 
-
-
-
-fn iphoneCurve(x, y, z){
+// generate iphone body
+fn iphoneBody(x, y, z) {
   return startSketchOn(offsetPlane('XY', offset = z))
-  |> startProfileAt([x,y], %)
-  |> yLine(-totalLength+(radius*2), %)
-  |> curves(allpoints, offset,%)
-  |> xLine(totalWidth-(radius*2), %)
-  |> curves(allpoints, rotatedOffset,%)
-  |> yLine(totalLength-(radius*2), %)
-  |> curves(allpoints, rotatedOffset180,%)
-  |> xLine(-totalWidth+(radius*2), %)
-  |> curves(allpoints, rotatedOffset270, %)
-  |> close()
-  |> extrude(length=thickness-(edgeRadius*2))
+    |> startProfileAt([x, y], %)
+    |> yLine(-lengthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
+    |> xLine(widthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffsetFunc, %)
+    |> yLine(lengthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
+    |> xLine(-widthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffset270Func, %)
+    |> close()
+    |> extrude(length = bodyThickness)
 }
 
+phoneBody = iphoneBody(0,0, 0)
 
-// phone = iphoneCurve(0,0, 0)
-// phone = iphoneCurve(-(totalWidth)/2, (totalLength+(radius*2))/2, 0)
-
-// --------------
-
+// -------------- Edge --------------
+// Edge curve points from diagram
 edgePoints = [
- [2*0,1.84],
- [2*0.07,2.86],
- [2*0.58,3.76],
- [2*1.47,4.10],
- [2*2.41,4.12],
+  [0, 0.0],
+  [0.07, 1.02],
+  [0.58, 1.92],
+  [1.47, 2.26],
+  [2.41, 2.28]
 ]
 
+// 0th and every third point are documented points.
+// intermediate points are interpolated
+// TODO: migrate python midpoint interpolation to KCL
 moreEdgePoints = [
   [0, 0.0],
-  [0.01, 0.34],
-  [0.03, 0.68],
-  [0.14, 1.02],
-  [0.37, 1.36],
-  [0.71, 1.67],
-  [1.16, 1.92],
-  [1.7, 2.1],
-  [2.31, 2.2],
-  [2.94, 2.26],
-  [3.57, 2.28],
-  [4.2, 2.29],
-  [4.82, 2.28],
+  [0.0, 0.34],
+  [0.01, 0.68],
+  [0.07, 1.02],
+  [0.18, 1.36],
+  [0.36, 1.67],
+  [0.58, 1.92],
+  [0.85, 2.1],
+  [1.15, 2.2],
+  [1.47, 2.26],
+  [1.79, 2.28],
+  [2.1, 2.28],
+  [2.41, 2.28],
 ]
 
 
-
-fn zRefLine(x, y){
-  return startSketchOn(offsetPlane('XY', offset = y))
-  |> startProfileAt([x,0], %)
-  |> line(endAbsolute=[x,nonArcLen])
+fn reversePts(xy) {
+  x0 = xy[0]
+  x1 = xy[1]
+  return [-x0, x1]
 }
 
-fn zRefArc(x, y){
-  return startSketchOn(offsetPlane('XZ', offset = 0))
-  |> startProfileAt([x,0], %)
-  |> bezierCurve({
-       to = moreEdgePoints[2],
-       control1 = moreEdgePoints[0],
-       control2 = moreEdgePoints[1],
-     }, %)
-  // |> line(endAbsolute=[x,nonArcLen])
+fn reversePtsY(xy) {
+  x0 = xy[0]
+  x1 = xy[1]
+  return [-x0, -x1]
 }
-
-zRefArc(edgePoints[0][0], edgePoints[0][1])
-// plane2  = offsetPlane('XZ', offset = edgePoints[0][1])
-
-// zRefLine(edgePoints[0][0], edgePoints[0][1])
-// zRefLine(edgePoints[1][0], edgePoints[1][1])
-// zRefLine(edgePoints[2][0], edgePoints[2][1])
-// zRefLine(edgePoints[3][0], edgePoints[3][1])
-// zRefLine(edgePoints[4][0], edgePoints[4][1])
-
 
 fn edgeBezCurves(pts, offsetFunc, z) {
   return bezierCurve({
-       to = offsetFunc(pts, 0, 3),
-       control1 = offsetFunc(pts, 0, 1),
-       control2 = offsetFunc(pts, 0, 2),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 3, 6),
-       control1 = offsetFunc(pts, 3, 4),
-       control2 = offsetFunc(pts, 3, 5),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 6, 9),
-       control1 = offsetFunc(pts, 6, 7),
-       control2 = offsetFunc(pts, 6, 8),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 9, 12),
-       control1 = offsetFunc(pts, 9, 10),
-       control2 = offsetFunc(pts, 9, 11),
-     }, %)
+         to = offsetFunc(pts, 0, 3),
+         control1 = offsetFunc(pts, 0, 1),
+         control2 = offsetFunc(pts, 0, 2)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 3, 6),
+         control1 = offsetFunc(pts, 3, 4),
+         control2 = offsetFunc(pts, 3, 5)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 6, 9),
+         control1 = offsetFunc(pts, 6, 7),
+         control2 = offsetFunc(pts, 6, 8)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 9, 12),
+         control1 = offsetFunc(pts, 9, 10),
+         control2 = offsetFunc(pts, 9, 11)
+       }, %)
 }
 
-fn edgeBezCurvesInverted(pts, offsetFunc, z) {
-  return bezierCurve({
-       to = offsetFunc(pts, 0, 3),
-       control1 = offsetFunc(pts, 0, 1),
-       control2 = offsetFunc(pts, 0, 2),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 3, 6),
-       control1 = offsetFunc(pts, 3, 4),
-       control2 = offsetFunc(pts, 3, 5),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 6, 9),
-       control1 = offsetFunc(pts, 6, 7),
-       control2 = offsetFunc(pts, 6, 8),
-     }, %)
-  |> bezierCurve({
-       to = offsetFunc(pts, 9, 12),
-       control1 = offsetFunc(pts, 9, 10),
-       control2 = offsetFunc(pts, 9, 11),
-     }, %)
+fn reverseOffset(pts, startIndex, endIndex) {
+  return offsetFunc(pts, startIndex, endIndex)
+    |> reversePts(%)
+}
+
+fn reverseOffsetY(pts, startIndex, endIndex) {
+  return offsetFunc(pts, startIndex, endIndex)
+    |> reversePtsY(%)
+}
+
+fn reverseRotatedOffset180(pts, startIndex, endIndex) {
+  return rotatedOffset180Func(pts, startIndex, endIndex)
+    |> reversePts(%)
 }
 
 
-fn edgeCurves(x, y, z){
+fn edgeCurves(points, x, y, z) {
+  rad = cornerCurveRadius - edgeCurveWidth
   return startSketchOn(offsetPlane('XZ', offset = z))
-  |> startProfileAt([x,y], %)
-  |> edgeBezCurves(moreEdgePoints, offset,%)
-  |> xLine(widthWithoutCurve/2, %)
-  |> edgeBezCurvesInverted(moreEdgePoints, offset,%)
-  // |> xLine(totalWidth-(radius*2), %)
-  // |> curves(allpoints, rotatedOffset,%)
-  // |> yLine(totalLength-(radius*2), %)
-  // |> curves(allpoints, rotatedOffset180,%)
-  // |> xLine(-totalWidth+(radius*2), %)
-  // |> curves(allpoints, rotatedOffset270, %)
-  // |> close()
-  // |> extrude(length=thickness-(edgeRadius*2))
+    |> startProfileAt([x, y], %)
+    |> edgeBezCurves(points, offsetFunc, %)
+    |> xLine(-rad, %)
+    |> yLine(-edgeCurveHeight, %)
+    |> close()
 }
 
-edgeCurve = edgeCurves(0,thickness,0)
+fn negativeY(xYpts) {
+  x = xYpts[0]
+  y = xYpts[1]
+  return [x, -y]
+}
+
+fn negativeX(xYpts) {
+  x = xYpts[0]
+  y = xYpts[1]
+  return [-x, y]
+}
+
+fn negativeYList(pts) {
+  return map(pts, negativeY)
+}
+
+fn negativeXList(pts) {
+  return map(pts, negativeX)
+}
+
+fn pairOffsetxy(pair, x, y) {
+  xx = pair[0]
+  yy = pair[1]
+  return [xx+x, yy+y]
+}
+fn pairOffsetX(xy, xOffset) {
+  return pairOffsetxy(xy, xOffset, 0)
+}
+fn pairOffsetY(xy, yOffset) {
+  return pairOffsetxy(xy, 0, yOffset)
+}
+
+fn listIdx(list, idx) {
+  return list[idx]
+}
+
+// Generate a bezier curve segment for a sweep Path
+fn generateBezierCurve(pts, offsetFunc, ptIdx, z) {
+  return bezierCurve({
+         to = offsetFunc(pts, ptIdx, ptIdx+3),
+         control1 = offsetFunc(pts, ptIdx, ptIdx+1),
+         control2 = offsetFunc(pts, ptIdx, ptIdx+2)
+       }, %)
+}
+
+// edgeCornerCurve draws a corner edge curve
+//
+// segment is the numeric segment [0-5] of the corner curve
+fn generateEdgeCornerCurve(segment) {
+  segmentStart = segment*3
+  startPoint = rotatedOffset180Func(
+    negativeXList(cornerCurvePoints),
+    0,
+    segmentStart)
+  sweepPath = startSketchOn(offsetPlane('XY', offset = bodyThickness))
+    |> startProfileAt(startPoint, %)
+    |> generateBezierCurve(
+        negativeXList(cornerCurvePoints),
+        rotatedOffset180Func,
+        segmentStart,
+        %)
+  return edgeCurves(
+    negativeXList(moreEdgePoints),
+    startPoint[0],
+    bodyThickness,
+    -startPoint[1])
+    |> sweep(path =sweepPath)
+}
+
+// corner edge swept solids
+generateEdgeCornerCurve(0)
+generateEdgeCornerCurve(1)
+generateEdgeCornerCurve(2)
+generateEdgeCornerCurve(3)
+generateEdgeCornerCurve(4)
+generateEdgeCornerCurve(5)
