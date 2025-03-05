@@ -286,7 +286,7 @@ fn edgeLineCurvesCurves(points, x, y, z) {
   return startSketchOn(offsetPlane('XZ', offset = z))
     |> startProfileAt([x, y], %)
     |> edgeBezCurves(points, offsetFunc, %)
-    |> xLine(cornerCurveRadius, %)
+    |> xLine(cornerCurveRadius - edgeCurveWidth, %)
     |> yLine(-edgeCurveHeight, %)
     |> close()
 }
@@ -301,8 +301,8 @@ fn generateEdgeCurves(startPointOffsetFunc, rotationFunc, pointFunc, segment, le
 }
 
 // TODO: add back after getting opposite edge extruded
-generateEdgeCurves(spOffsetFunc(0, 0), rotatedOffset180Func, identity, 0, lengthWithoutCurve)
+edge1 = generateEdgeCurves(spOffsetFunc(0, 0), rotatedOffset180Func, identity, 0, lengthWithoutCurve)
 
-// TODO: play with a copy of edgeCurves() to do get this to rotate 180
+// TODO: play with a copy of edgeCurves() to do get this to rotate 90, 180, 270
 // generateEdgeCurves(spOffsetFunc(totalWidth-(cornerCurveRadius+edgeCurveWidth),0),rotatedOffset180Func, identity, 0, lengthWithoutCurve)
 
