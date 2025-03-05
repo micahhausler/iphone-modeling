@@ -55,7 +55,7 @@ fn offsetFunc(pts, startIndex, endIndex) {
 }
 
 // rotatedOffset returns the relative difference between two points in a list, rotated 90 degrees
-fn rotatedOffsetFunc(pts, startIndex, endIndex) {
+fn rotatedOffset90Func(pts, startIndex, endIndex) {
   offsetRes = offsetFunc(pts, startIndex, endIndex)
   return [-offsetRes[1], offsetRes[0]]
 }
@@ -113,7 +113,7 @@ fn iphoneBody(x, y, z) {
     |> yLine(-lengthWithoutCurve, %)
     |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
     |> xLine(widthWithoutCurve, %)
-    |> cornerBezierCurves(cornerCurvePoints, rotatedOffsetFunc, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffset90Func, %)
     |> yLine(lengthWithoutCurve, %)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
     |> xLine(-widthWithoutCurve, %)
@@ -225,6 +225,14 @@ fn negativeXList(pts) {
   return map(pts, negativeX)
 }
 
+fn negativeXYList(pts) {
+  return negativeYList(  negativeXList(pts))
+}
+
+fn identity(pts) {
+  return pts
+}
+
 fn pairOffsetxy(pair, x, y) {
   return [pair[0] + x, pair[1] + y]
 }
@@ -244,24 +252,57 @@ fn generateBezierCurve(pts, offsetFunc, ptIdx, z) {
   }, %)
 }
 
-// edgeCornerCurve draws a corner edge curve
-//
-// segment is the numeric segment [0-5] of the corner curve
-fn generateEdgeCornerCurve(segment) {
+fn generateEdgeCornerCurves(startPointOffsetFunc, rotationFunc, pointFunc, segment) {
   segmentStart = segment * 3
-  startPoint = rotatedOffset180Func(  negativeXList(cornerCurvePoints), 0, segmentStart)
+  startPoint0 = rotationFunc(  pointFunc(cornerCurvePoints), 0, segmentStart)
+  startPoint = startPointOffsetFunc(startPoint0)
   sweepPath = startSketchOn(offsetPlane('XY', offset = bodyThickness))
     |> startProfileAt(startPoint, %)
-    |> generateBezierCurve(negativeXList(cornerCurvePoints), rotatedOffset180Func, segmentStart, %)
-  return edgeCurves(negativeXList(moreEdgePoints), startPoint[0], bodyThickness, -startPoint[1])
+    |> generateBezierCurve(pointFunc(cornerCurvePoints), rotationFunc, segmentStart, %)
+  return edgeCurves(pointFunc(moreEdgePoints), startPoint[0], bodyThickness, -startPoint[1])
     |> sweep(path = sweepPath)
 }
 
-// corner edge swept solids
-generateEdgeCornerCurve(0)
-generateEdgeCornerCurve(1)
-generateEdgeCornerCurve(2)
-generateEdgeCornerCurve(3)
-generateEdgeCornerCurve(4)
-generateEdgeCornerCurve(5)
+fn spOffsetFunc(x, y) {
+  return fn(xy) {
+    return [x + xy[0], y + xy[1]]
+  }
+}
+
+fn curveGeneratorXYOffset(rotationFunc, x, y) {
+  return fn(idx) {
+    return generateEdgeCornerCurves(    spOffsetFunc(x, y), rotationFunc, negativeXList, idx)
+  }
+}
+
+// 4 corner edge curve points
+map([0, 1, 2, 3, 4, 5], curveGeneratorXYOffset(rotatedOffset180Func, 0, 0))
+map([0, 1, 2, 3, 4, 5], curveGeneratorXYOffset(rotatedOffset90Func, widthWithoutCurve + cornerCurveRadius, cornerCurveRadius))
+map([0, 1, 2, 3, 4, 5], curveGeneratorXYOffset(rotatedOffset270Func, cornerCurveRadius, -totalLength + cornerCurveRadius))
+map([0, 1, 2, 3, 4, 5], curveGeneratorXYOffset(offsetFunc, totalWidth, -totalLength + 2 * cornerCurveRadius))
+
+fn edgeLineCurvesCurves(points, x, y, z) {
+  rad = cornerCurveRadius - edgeCurveWidth
+  return startSketchOn(offsetPlane('XZ', offset = z))
+    |> startProfileAt([x, y], %)
+    |> edgeBezCurves(points, offsetFunc, %)
+    |> xLine(cornerCurveRadius, %)
+    |> yLine(-edgeCurveHeight, %)
+    |> close()
+}
+
+fn generateEdgeCurves(startPointOffsetFunc, rotationFunc, pointFunc, segment, length) {
+  // TODO: segment arg not required for edge curve, simplify that down
+  // segmentStart = segment * 3
+  // startPoint = startPointOffsetFunc(rotationFunc(pointFunc(cornerCurvePoints), 0, segmentStart))
+  startPoint = startPointOffsetFunc([0, 0])
+  return edgeLineCurvesCurves(pointFunc(moreEdgePoints), startPoint[0], bodyThickness, -startPoint[1])
+    |> extrude(length = length)
+}
+
+// TODO: add back after getting opposite edge extruded
+generateEdgeCurves(spOffsetFunc(0, 0), rotatedOffset180Func, identity, 0, lengthWithoutCurve)
+
+// TODO: play with a copy of edgeCurves() to do get this to rotate 180
+// generateEdgeCurves(spOffsetFunc(totalWidth-(cornerCurveRadius+edgeCurveWidth),0),rotatedOffset180Func, identity, 0, lengthWithoutCurve)
 
