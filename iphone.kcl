@@ -273,8 +273,10 @@ fn generateEdgeCornerCurves(startPointOffsetFunc, rotationFunc, pointFunc, segme
   sweepPath = startSketchOn(offsetPlane('XY', offset = zOffset))
     |> startProfileAt(startPoint, %)
     |> generateBezierCurve(pointFunc(cornerCurvePoints), rotationFunc, segmentStart, %)
-  return edgeCurves(pointFunc(moreEdgePoints), startPoint[0], zOffset, -startPoint[1])
+  curves = edgeCurves(pointFunc(moreEdgePoints), startPoint[0], zOffset, -startPoint[1])
     |> sweep(path = sweepPath)
+
+  return [curves, sweepPath]
 }
 
 fn spOffsetFunc(x, y){
@@ -326,7 +328,12 @@ map (
     [0,1,2,3,4,5],
     curveGeneratorXYZOffset(rotatedOffset180Func, -cornerCurveRadius,-cornerCurveRadius, 0)
   ),
-  fn(solid) {
+  fn(solidPath) {
+    solid = solidPath[0]
+    path = solidPath[1]
+    |> close()
+    |> extrude(length=-bodyThickness)
+    |> rotate(roll = 180, pitch = 0, yaw = 270)
     return solid |> rotate(roll = 180, pitch = 0, yaw = 270)
   }
 )
@@ -335,7 +342,12 @@ map (
     [0,1,2,3,4,5],
     curveGeneratorXYZOffset(rotatedOffset180Func, -totalWidth, 0, 0)
   ),
-  fn(solid) {
+  fn(solidPath) {
+    solid = solidPath[0]
+    path = solidPath[1]
+    |> close()
+    |> extrude(length=-bodyThickness)
+    |> rotate(roll = 180, pitch = 0, yaw = 180)
     return solid |> rotate(roll = 180, pitch = 0, yaw = 180)
   }
 )
@@ -344,7 +356,12 @@ map (
     [0,1,2,3,4,5],
     curveGeneratorXYZOffset(rotatedOffset180Func, -lengthWithoutCurve-cornerCurveRadius, totalWidth-cornerCurveRadius, 0)
   ),
-  fn(solid) {
+  fn(solidPath) {
+    solid = solidPath[0]
+    path = solidPath[1]
+    |> close()
+    |> extrude(length=-bodyThickness)
+    |> rotate(roll = 180, pitch = 0, yaw = 90)
     return solid |> rotate(roll = 180, pitch = 0, yaw = 90)
   }
 )
@@ -353,7 +370,12 @@ map (
     [0,1,2,3,4,5],
     curveGeneratorXYZOffset(rotatedOffset180Func, 0, lengthWithoutCurve, 0)
   ),
-  fn(solid) {
+  fn(solidPath) {
+    solid = solidPath[0]
+    path = solidPath[1]
+    |> close()
+    |> extrude(length=-bodyThickness)
+    |> rotate(roll = 180, pitch = 0, yaw = 0)
     return solid |> rotate(roll = 180, pitch = 0, yaw = 0)
   }
 )

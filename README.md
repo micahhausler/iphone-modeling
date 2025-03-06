@@ -24,7 +24,7 @@ This repository builds a 3D model of an iPhone 16 Pro using [Zoo.dev](https://zo
 **Code Cleanup**
 - [ ] Fillet edge and corner curves?
 - [ ] use `rotate()` instead of all the manual rotation/function passing
-- [ ] Figure out how to remove sweep paths for corner/edge volumes after use
+- [x] Figure out how to remove sweep paths for corner/edge volumes after use. (After the sweep I ended up making the path into a solid and calling `rotate()` on it too. Its kind of a hack but the solid hides inside the phone body)
 
 ## License
 
