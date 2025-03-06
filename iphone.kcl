@@ -124,7 +124,16 @@ fn iphoneBody(x, y, z) {
 
 phoneBody = iphoneBody(0, 0, 0)
 
-// -------------- Edge --------------
+// center fill
+startSketchOn(offsetPlane('XY', offset = -edgeCurveHeight))
+  |> startProfileAt([cornerCurveRadius, 0], %)
+  |> xLine(widthWithoutCurve, %)
+  |> yLine(-lengthWithoutCurve, %)
+  |> xLine(-widthWithoutCurve, %)
+  |> close()
+  |> extrude(length = totalThickness)
+
+  // -------------- Edge --------------
 // Edge curve points from diagram
 edgePoints = [
   [0, 0.0],
@@ -305,19 +314,43 @@ fn edgeLineCurvesCurves(points, x, y, z, xyzFuncs) {
 }
 
 fn generateEdgeCurves(startPointOffsetFunc, z, length, xyzFuncs) {
-  // TODO: segment arg not required for edge curve, simplify that down
-  // segmentStart = segment * 3
-  // startPoint = startPointOffsetFunc(rotationFunc(pointFunc(cornerCurvePoints), 0, segmentStart))
   startPoint = startPointOffsetFunc([0, 0])
   return edgeLineCurvesCurves(moreEdgePoints, startPoint[0], z, -startPoint[1], xyzFuncs)
     |> extrude(length = length)
 }
 
+// initial edge
 generateEdgeCurves(spOffsetFunc(0, 0), bodyThickness, lengthWithoutCurve, {
   xFunc = identity,
   yFunc = identity,
   zFunc = identity,
   pointFunc = identity
+})
+
+// top edge
+generateEdgeCurves(spOffsetFunc(-cornerCurveRadius, totalWidth - cornerCurveRadius), bodyThickness, widthWithoutCurve, {
+       xFunc = identity,
+       yFunc = identity,
+       zFunc = identity,
+       pointFunc = identity
+     })
+  |> rotate(roll = 0, pitch = 00, yaw = 270)
+
+// Bottom edge
+generateEdgeCurves(spOffsetFunc(-totalLength + cornerCurveRadius, -cornerCurveRadius), bodyThickness, widthWithoutCurve, {
+       xFunc = identity,
+       yFunc = identity,
+       zFunc = identity,
+       pointFunc = identity
+     })
+  |> rotate(roll = 0, pitch = 00, yaw = 90)
+
+// opposite top edge
+generateEdgeCurves(spOffsetFunc(-totalWidth, 0), -bodyThickness, lengthWithoutCurve, {
+  xFunc = invert,
+  yFunc = invert,
+  zFunc = identity,
+  pointFunc = negativeXList
 })
 
 // underside edge
@@ -329,18 +362,11 @@ generateEdgeCurves(spOffsetFunc(0, 0), 0, lengthWithoutCurve, {
 })
 
 // opposite top edge
-generateEdgeCurves(spOffsetFunc(-totalWidth, 0), -bodyThickness, lengthWithoutCurve, {
-  xFunc = invert,
-  yFunc = invert,
-  zFunc = identity,
-  pointFunc = negativeXList
-})
-
-// opposite top edge
 generateEdgeCurves(spOffsetFunc(-totalWidth, 0), 0, lengthWithoutCurve, {
   xFunc = invert,
   yFunc = invert,
   zFunc = invert,
-  pointFunc = negativeXYList
+  pointFunc = negativeXYList,
+  pointRotationFunc = identity
 })
 
