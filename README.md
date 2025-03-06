@@ -6,8 +6,6 @@ This repository builds a 3D model of an iPhone 16 Pro using [Zoo.dev](https://zo
 
 ![iPhone 16 Pro Preview](./img/model.png)
 
-I've got lots of notes on wants from KCL, I'll add those at some point.
-
 ## License
 
 Apache 2.0
