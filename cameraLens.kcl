@@ -1,0 +1,201 @@
+
+cornerCurveRadius = 19.23
+totalWidth = 71.45
+totalLength = 149.61
+bodyLength = -totalLength + cornerCurveRadius * 2
+
+edgeCurveHeight = 2.28
+totalThickness = 8.25
+bodyThickness = totalThickness - (edgeCurveHeight * 2)
+
+lengthWithoutCurve = totalLength - (cornerCurveRadius * 2)
+widthWithoutCurve = totalWidth - (cornerCurveRadius * 2)
+
+edgeCurveWidth = 2.41
+widthWithoutEdgeCurve = totalWidth - (edgeCurveWidth * 2)
+
+// 0th and every third point are documented points.
+// intermediate points are interpolated
+// TODO: migrate python midpoint interpolation to KCL
+cornerCurvePoints = [
+  [0, 19.23],
+  [0.01, 17.41],
+  [0.02, 15.58],
+  [0.04, 13.75],
+  [0.17, 11.92],
+  [0.43, 10.12],
+  [0.89, 8.36],
+  [1.6, 6.68],
+  [2.56, 5.13],
+  [3.74, 3.74],
+  [5.13, 2.56],
+  [6.68, 1.6],
+  [8.36, 0.89],
+  [10.12, 0.43],
+  [11.92, 0.17],
+  [13.75, 0.04],
+  [15.58, 0.02],
+  [17.41, 0.01],
+  [19.23, 0]
+]
+
+// offset returns the relative difference between two points in a list
+fn offsetFunc(pts, startIndex, endIndex) {
+  r0 = pts[startIndex]
+  xx0 = r0[0]
+  yy0 = r0[1]
+  r1 = pts[endIndex]
+  xx1 = r1[0]
+  yy1 = r1[1]
+  return [xx1 - xx0, yy1 - yy0]
+}
+
+// rotatedOffset returns the relative difference between two points in a list, rotated 90 degrees
+fn rotatedOffset90Func(pts, startIndex, endIndex) {
+  offsetRes = offsetFunc(pts, startIndex, endIndex)
+  return [-offsetRes[1], offsetRes[0]]
+}
+
+// rotatedOffset180 returns the relative difference between two points in a list, rotated 180 degrees
+fn rotatedOffset180Func(pts, startIndex, endIndex) {
+  offsetRes = offsetFunc(pts, startIndex, endIndex)
+  return [-offsetRes[0], -offsetRes[1]]
+}
+
+// rotatedOffset270 returns the relative difference between two points in a list, rotated 270 degrees
+fn rotatedOffset270Func(pts, startIndex, endIndex) {
+  offsetRes = offsetFunc(pts, startIndex, endIndex)
+  return [offsetRes[1], -offsetRes[0]]
+}
+
+// cornerBezierCurves returns siz corner bezier curves
+fn cornerBezierCurves(pts, offsetFunc, z) {
+  return bezierCurve({
+         to = offsetFunc(pts, 0, 3),
+         control1 = offsetFunc(pts, 0, 1),
+         control2 = offsetFunc(pts, 0, 2)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 3, 6),
+         control1 = offsetFunc(pts, 3, 4),
+         control2 = offsetFunc(pts, 3, 5)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 6, 9),
+         control1 = offsetFunc(pts, 6, 7),
+         control2 = offsetFunc(pts, 6, 8)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 9, 12),
+         control1 = offsetFunc(pts, 9, 10),
+         control2 = offsetFunc(pts, 9, 11)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 12, 15),
+         control1 = offsetFunc(pts, 12, 13),
+         control2 = offsetFunc(pts, 12, 14)
+       }, %)
+    |> bezierCurve({
+         to = offsetFunc(pts, 15, 18),
+         control1 = offsetFunc(pts, 15, 16),
+         control2 = offsetFunc(pts, 15, 17)
+       }, %)
+}
+
+// generate iphone body
+fn iphoneBody(x, y, z) {
+  return startSketchOn(offsetPlane('XY', offset = z))
+    |> startProfileAt([x, y], %)
+    |> yLine(-lengthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
+    |> xLine(widthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffset90Func, %)
+    |> yLine(lengthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
+    |> xLine(-widthWithoutCurve, %)
+    |> cornerBezierCurves(cornerCurvePoints, rotatedOffset270Func, %)
+    |> close()
+    |> extrude(length = totalThickness)
+}
+
+phoneBody = iphoneBody(0, 0, 0)
+
+
+cameraEdgeOffset = 1.04
+cameraBaseRadius = 14.17 - cameraEdgeOffset
+cameraBaseWidth = 45.22 - cameraEdgeOffset
+cameraBaseWidthWithoutCurves = cameraBaseWidth - (2*cameraBaseRadius)
+cameraBaseLength = 46.45 - cameraEdgeOffset
+cameraBaseLengthWithoutCurves = cameraBaseLength - (2*cameraBaseRadius)
+
+cameraPlateauOffset = 4.70
+cameraPlateauWidth = 41.56 - cameraPlateauOffset
+cameraPlateauWidthWithoutCurves = cameraPlateauWidth - (2*cameraBaseRadius)
+camreaPlateauLength = 42.88 - cameraPlateauOffset
+cameraPlateauLengthWithoutCurves = camreaPlateauLength - (2*cameraBaseRadius)
+
+cameraPlateauThickness = 2.05
+cameraThickness = 4.28 - cameraPlateauThickness
+
+camera1HeightOffset = 14.17
+camera1WidthOffset = 14.17
+camera2HeightOffset = 33.41
+camera2WidthOffset = 14.17
+camera3HeightOffset = 23.79
+camera3WidthOffset = 32.16
+
+cameraLensDiameter = 16.02
+cameraLensRadius = cameraLensDiameter/2
+
+
+
+fn cameraBody(x, y, z) {
+  cameraBase = startSketchOn(offsetPlane('XY', offset = z))
+    |> startProfileAt([x+cameraEdgeOffset, y+cornerCurveRadius-cameraBaseRadius-cameraEdgeOffset], %)
+    |> yLine(-cameraBaseLengthWithoutCurves, %, $cameraEdge1)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(cameraBaseWidthWithoutCurves, %,  $cameraEdge2)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(cameraBaseLengthWithoutCurves, %, $cameraEdge3)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(-cameraBaseWidthWithoutCurves, %,  $cameraEdge4)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> close()
+
+    cameraPlateau =startSketchOn(offsetPlane('XY', offset = z+cameraPlateauThickness))
+    |> startProfileAt([x+cameraPlateauOffset, y+cornerCurveRadius-cameraBaseRadius-cameraPlateauOffset], %)
+    |> yLine(-cameraPlateauLengthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(cameraPlateauWidthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(cameraPlateauLengthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(-cameraPlateauWidthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> close()
+
+    // TODO: do a reverse curve/sweep/extrusion
+    lofted = loft(
+      [cameraBase, cameraPlateau],
+      baseCurveIndex = 2,
+      bezApproximateRational = true,
+      tolerance = 0.0000001,
+      vDegree = 3,
+    )
+
+    return lofted
+}
+
+fn lenses(x, y, z) {
+  return startSketchOn(offsetPlane('XY', offset = z+totalThickness+cameraPlateauThickness))
+    |> circle({
+      center = [x, y+cornerCurveRadius],
+      radius = cameraLensRadius,
+    }, %)
+    |> extrude(%, length = cameraThickness)
+}
+
+cameraBase = cameraBody(0,0,totalThickness)
+cameraLens1 = lenses(camera1WidthOffset,-camera1HeightOffset,0)
+cameraLens2 = lenses(camera2WidthOffset,-camera2HeightOffset,0)
+cameraLens3 = lenses(camera3WidthOffset,-camera3HeightOffset,0)

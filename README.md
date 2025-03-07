@@ -16,14 +16,15 @@ This repository builds a 3D model of an iPhone 16 Pro using [Zoo.dev](https://zo
 - [x] Sweep edge curves along corner along each corner's 6 bezier curve segments. (And duplicate/rotate for corners on top and bottom)
 - [x] Extrude edge curve along sides/top/bottom (and back 4 edges)
 - [x] Create center body/back rectangle (width - 2 * corner curve radius) x (length - 2 * corner curve radius) and extrude
-- [ ] Create camera bumpout
+- [x] Create camera bumpout
+- [ ] Use bezier curve/sweep/extrude for camera mount -> plateau instead of `loft()` (unless loft supports a bezier curve?)
 - [ ] Create power/volume/action buttons
-- [ ] Reverse extrude USB-C port
-- [ ] Reverse extrude speaker holes
+- [ ] `hole()` for USB-C port
+- [ ] `hole()` speaker holes
 
 **Code Cleanup**
-- [ ] Fillet edge and corner curves?
 - [ ] use `rotate()` instead of all the manual rotation/function passing
+- [x] ~~Fillet edge and corner curves?~~ Simpler, but not as accurate on corner curves
 - [x] Figure out how to remove sweep paths for corner/edge volumes after use. (After the sweep I ended up making the path into a solid and calling `rotate()` on it too. Its kind of a hack but the solid hides inside the phone body)
 
 ## License

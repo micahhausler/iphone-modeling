@@ -322,6 +322,7 @@ map(
     -totalLength+2*cornerCurveRadius,
     bodyThickness))
 
+// /*
 // bottom corners
 map (
   map(
@@ -442,6 +443,7 @@ generateEdgeCurves(spOffsetFunc(-totalWidth,0), -bodyThickness, lengthWithoutCur
   pointFunc = negativeXList,
 })
 
+// /*
 // underside edge
 generateEdgeCurves(spOffsetFunc(0,0), 0, lengthWithoutCurve, {
   xFunc = identity,
@@ -474,3 +476,85 @@ generateEdgeCurves(spOffsetFunc(-cornerCurveRadius,-totalWidth+cornerCurveRadius
   zFunc = invert,
   pointFunc = negativeYList,
 }) |> rotate(roll = 0, pitch = 00, yaw = 270)
+//*/
+
+// LENS
+
+cameraEdgeOffset = 1.04
+cameraBaseRadius = 14.17 - cameraEdgeOffset
+cameraBaseWidth = 45.22 - cameraEdgeOffset
+cameraBaseWidthWithoutCurves = cameraBaseWidth - (2*cameraBaseRadius)
+cameraBaseLength = 46.45 - cameraEdgeOffset
+cameraBaseLengthWithoutCurves = cameraBaseLength - (2*cameraBaseRadius)
+
+cameraPlateauOffset = 4.70
+cameraPlateauWidth = 41.56 - cameraPlateauOffset
+cameraPlateauWidthWithoutCurves = cameraPlateauWidth - (2*cameraBaseRadius)
+camreaPlateauLength = 42.88 - cameraPlateauOffset
+cameraPlateauLengthWithoutCurves = camreaPlateauLength - (2*cameraBaseRadius)
+
+cameraPlateauThickness = 2.05
+cameraThickness = 4.28 - cameraPlateauThickness
+
+camera1HeightOffset = 14.17
+camera1WidthOffset = 14.17
+camera2HeightOffset = 33.41
+camera2WidthOffset = 14.17
+camera3HeightOffset = 23.79
+camera3WidthOffset = 32.16
+
+cameraLensDiameter = 16.02
+cameraLensRadius = cameraLensDiameter/2
+
+
+
+fn cameraBody(x, y, z) {
+  cameraBase = startSketchOn(offsetPlane('XY', offset = z))
+    |> startProfileAt([x+cameraEdgeOffset, y+cornerCurveRadius-cameraBaseRadius-cameraEdgeOffset], %)
+    |> yLine(-cameraBaseLengthWithoutCurves, %, $cameraEdge1)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(cameraBaseWidthWithoutCurves, %,  $cameraEdge2)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(cameraBaseLengthWithoutCurves, %, $cameraEdge3)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(-cameraBaseWidthWithoutCurves, %,  $cameraEdge4)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> close()
+
+    cameraPlateau =startSketchOn(offsetPlane('XY', offset = z+cameraPlateauThickness))
+    |> startProfileAt([x+cameraPlateauOffset, y+cornerCurveRadius-cameraBaseRadius-cameraPlateauOffset], %)
+    |> yLine(-cameraPlateauLengthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(cameraPlateauWidthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(cameraPlateauLengthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> xLine(-cameraPlateauWidthWithoutCurves, %)
+    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> close()
+
+    // TODO: do a reverse curve/sweep/extrusion
+    lofted = loft(
+      [cameraBase, cameraPlateau],
+      baseCurveIndex = 2,
+      bezApproximateRational = true,
+      tolerance = 0.0000001,
+      vDegree = 3,
+    )
+
+    return lofted
+}
+
+fn lenses(x, y, z) {
+  return startSketchOn(offsetPlane('XY', offset = z+totalThickness-edgeCurveHeight+cameraPlateauThickness))
+    |> circle({
+      center = [x, y+cornerCurveRadius],
+      radius = cameraLensRadius,
+    }, %)
+    |> extrude(%, length = cameraThickness)
+}
+
+cameraBase = cameraBody(0,0,totalThickness-edgeCurveHeight)
+cameraLens1 = lenses(camera1WidthOffset,-camera1HeightOffset,0)
+cameraLens2 = lenses(camera2WidthOffset,-camera2HeightOffset,0)
+cameraLens3 = lenses(camera3WidthOffset,-camera3HeightOffset,0)
