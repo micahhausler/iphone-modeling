@@ -490,8 +490,8 @@ cameraBaseLengthWithoutCurves = cameraBaseLength - (2*cameraBaseRadius)
 cameraPlateauOffset = 4.70
 cameraPlateauWidth = 41.56 - cameraPlateauOffset
 cameraPlateauWidthWithoutCurves = cameraPlateauWidth - (2*cameraBaseRadius)
-camreaPlateauLength = 42.88 - cameraPlateauOffset
-cameraPlateauLengthWithoutCurves = camreaPlateauLength - (2*cameraBaseRadius)
+cameraPlateauLength = 42.88 - cameraPlateauOffset
+cameraPlateauLengthWithoutCurves = cameraPlateauLength - (2*cameraBaseRadius)
 
 cameraPlateauThickness = 2.05
 cameraThickness = 4.28 - cameraPlateauThickness
@@ -521,15 +521,22 @@ fn cameraBody(x, y, z) {
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
     |> close()
 
-    cameraPlateau0 =startSketchOn(offsetPlane('XY', offset = z+cameraPlateauThickness*0.8))
-    |> startProfileAt([x+cameraPlateauOffset, y+cornerCurveRadius-cameraBaseRadius-cameraPlateauOffset], %)
-    |> yLine(-cameraPlateauLengthWithoutCurves, %)
+  // height/width/length difference picked manually, measurements not provided
+  plateauCurveMidSketchHeight = cameraPlateauThickness * .15
+  plateauCurveMidSketchWidth = cameraPlateauWidth+ ((cameraBaseWidth - cameraPlateauWidth)/2) -(2*cameraBaseRadius)
+  plateauCurveMidSketchLength = cameraPlateauLength + ((cameraBaseLength - cameraPlateauLength)/2)- (2*cameraBaseRadius)
+
+  midPlateauCurveXOffset = cameraPlateauOffset - (cameraBaseWidth - cameraPlateauWidth)/4
+
+  cameraPlateau0 =startSketchOn(offsetPlane('XY', offset = z+plateauCurveMidSketchHeight))
+    |> startProfileAt([x+midPlateauCurveXOffset, y+cornerCurveRadius-cameraBaseRadius-midPlateauCurveXOffset], %)
+    |> yLine(-plateauCurveMidSketchLength, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(cameraPlateauWidthWithoutCurves, %)
+    |> xLine(plateauCurveMidSketchWidth, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> yLine(cameraPlateauLengthWithoutCurves, %)
+    |> yLine(plateauCurveMidSketchLength, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(-cameraPlateauWidthWithoutCurves, %)
+    |> xLine(-plateauCurveMidSketchWidth, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
     |> close()
 
@@ -545,16 +552,15 @@ fn cameraBody(x, y, z) {
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
     |> close()
 
-    // TODO: do a reverse curve/sweep/extrusion
     lofted = loft(
-      [cameraBase, cameraPlateau0,cameraPlateau],
+      [cameraBase, cameraPlateau0, cameraPlateau],
       // baseCurveIndex = 2,
       // bezApproximateRational = true,
       // tolerance = 0.0000001,
       // vDegree = 3,
     )
 
-    return lofted
+    return cameraPlateau
 }
 
 fn lenses(x, y, z) {

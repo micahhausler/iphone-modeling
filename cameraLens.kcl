@@ -131,8 +131,8 @@ cameraBaseLengthWithoutCurves = cameraBaseLength - (2*cameraBaseRadius)
 cameraPlateauOffset = 4.70
 cameraPlateauWidth = 41.56 - cameraPlateauOffset
 cameraPlateauWidthWithoutCurves = cameraPlateauWidth - (2*cameraBaseRadius)
-camreaPlateauLength = 42.88 - cameraPlateauOffset
-cameraPlateauLengthWithoutCurves = camreaPlateauLength - (2*cameraBaseRadius)
+cameraPlateauLength = 42.88 - cameraPlateauOffset
+cameraPlateauLengthWithoutCurves = cameraPlateauLength - (2*cameraBaseRadius)
 
 cameraPlateauThickness = 2.05
 cameraThickness = 4.28 - cameraPlateauThickness
@@ -162,15 +162,22 @@ fn cameraBody(x, y, z) {
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
     |> close()
 
-  cameraPlateau0 =startSketchOn(offsetPlane('XY', offset = z+cameraPlateauThickness*.8))
-    |> startProfileAt([x+cameraPlateauOffset, y+cornerCurveRadius-cameraBaseRadius-cameraPlateauOffset], %)
-    |> yLine(-cameraPlateauLengthWithoutCurves, %)
+  // height/width/length difference picked manually, measurements not provided
+  plateauCurveMidSketchHeight = cameraPlateauThickness * .15
+  plateauCurveMidSketchWidth = cameraPlateauWidth+ ((cameraBaseWidth - cameraPlateauWidth)/2) -(2*cameraBaseRadius)
+  plateauCurveMidSketchLength = cameraPlateauLength + ((cameraBaseLength - cameraPlateauLength)/2)- (2*cameraBaseRadius)
+
+  midPlateauCurveXOffset = cameraPlateauOffset - (cameraBaseWidth - cameraPlateauWidth)/4
+
+  cameraPlateau0 =startSketchOn(offsetPlane('XY', offset = z+plateauCurveMidSketchHeight))
+    |> startProfileAt([x+midPlateauCurveXOffset, y+cornerCurveRadius-cameraBaseRadius-midPlateauCurveXOffset], %)
+    |> yLine(-plateauCurveMidSketchLength, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(cameraPlateauWidthWithoutCurves, %)
+    |> xLine(plateauCurveMidSketchWidth, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> yLine(cameraPlateauLengthWithoutCurves, %)
+    |> yLine(plateauCurveMidSketchLength, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(-cameraPlateauWidthWithoutCurves, %)
+    |> xLine(-plateauCurveMidSketchWidth, %)
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
     |> close()
 
@@ -211,3 +218,25 @@ cameraBase = cameraBody(0,0,totalThickness)
 cameraLens1 = lenses(camera1WidthOffset,-camera1HeightOffset,0)
 cameraLens2 = lenses(camera2WidthOffset,-camera2HeightOffset,0)
 cameraLens3 = lenses(camera3WidthOffset,-camera3HeightOffset,0)
+
+
+// USB-C hole
+
+usbcHeight = 3.14
+usbcRadius = 3.14/2
+usbcWidth = 40.58-30.86
+usbcOffset = 30.86 + usbcRadius
+usbcWidthWithoutCurves = usbcWidth - (usbcRadius*2)
+
+fn usbcSketch(x,y,z) {
+  squareSketch = startSketchOn(offsetPlane('XZ', offset = z+totalLength-cornerCurveRadius))
+    |> startProfileAt([usbcOffset, (bodyThickness/2)+usbcRadius], %)
+    |> xLine(usbcWidthWithoutCurves, %)
+    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> xLine(-usbcWidthWithoutCurves, %)
+    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> close()
+  return squareSketch
+}
+
+usbcFace = usbcSketch(0,0,0)
