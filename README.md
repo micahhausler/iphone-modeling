@@ -17,8 +17,8 @@ This repository builds a 3D model of an iPhone 16 Pro using [Zoo.dev](https://zo
 - [x] Extrude edge curve along sides/top/bottom (and back 4 edges)
 - [x] Create center body/back rectangle (width - 2 * corner curve radius) x (length - 2 * corner curve radius) and extrude
 - [x] Create camera bumpout
-- [ ] increase size of middle sketch to Camera Plateau `loft()` to get a smoother curve
-- [ ] Create power/volume/action buttons
+- [x] increase size of middle sketch to Camera Plateau `loft()` to get a smoother curve
+- [x] Create power/volume/action buttons
 - [ ] `hole()` for USB-C port
 - [ ] `hole()` speaker holes
 

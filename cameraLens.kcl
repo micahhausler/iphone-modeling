@@ -193,7 +193,6 @@ fn cameraBody(x, y, z) {
     |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
     |> close()
 
-    // TODO: do a reverse curve/sweep/extrusion
     lofted = loft(
       [cameraBase, cameraPlateau0, cameraPlateau],
       // baseCurveIndex = 2,
@@ -220,7 +219,7 @@ cameraLens2 = lenses(camera2WidthOffset,-camera2HeightOffset,0)
 cameraLens3 = lenses(camera3WidthOffset,-camera3HeightOffset,0)
 
 
-// USB-C hole
+/*
 
 usbcHeight = 3.14
 usbcRadius = 3.14/2
@@ -228,15 +227,66 @@ usbcWidth = 40.58-30.86
 usbcOffset = 30.86 + usbcRadius
 usbcWidthWithoutCurves = usbcWidth - (usbcRadius*2)
 
-fn usbcSketch(x,y,z) {
-  squareSketch = startSketchOn(offsetPlane('XZ', offset = z+totalLength-cornerCurveRadius))
-    |> startProfileAt([usbcOffset, (bodyThickness/2)+usbcRadius], %)
-    |> xLine(usbcWidthWithoutCurves, %)
-    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
-    |> xLine(-usbcWidthWithoutCurves, %)
-    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+*/
+
+// Buttons
+
+buttonDepth = 0.45
+buttonWidth  = 2.66
+buttonRadius = buttonWidth/2
+
+powerButtonLengthWithoutCurves = 8.85*2-buttonRadius*2
+powerButtonDistanceFromTop = 55.33-(8.85)
+
+actionButtonLengthWithoutCurves = 3.45*2-buttonRadius*2
+actionButtonDistanceFromTop = 34.08 - 3.45
+
+volumeButtonLengthWithoutCurves = 5.60*2-buttonRadius*2
+volumeUpButtonDistanceFromTop = 48.23 - 5.60
+volumeDownButtonDistanceFromTop = 62.43 - 5.60
+
+fn buttonSketch(x,y,z, depth, buttonLength) {
+  squareSketch = startSketchOn(
+    offsetPlane(
+      'YZ',
+      offset = z ))
+    |> startProfileAt([
+      x,
+      y,
+      ], %)
+    |> xLine(-buttonLength, %)
+    |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
+    |> xLine(buttonLength, %)
+    |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
     |> close()
+    |> extrude(%, length = depth)
   return squareSketch
 }
 
-usbcFace = usbcSketch(0,0,0)
+powerButton = buttonSketch(
+  cornerCurveRadius-powerButtonDistanceFromTop-buttonRadius,
+  totalThickness/2+buttonRadius,
+  0,
+  -buttonDepth,
+  powerButtonLengthWithoutCurves)
+
+actionButton = buttonSketch(
+  cornerCurveRadius-actionButtonDistanceFromTop-buttonRadius,
+  totalThickness/2+buttonRadius,
+  totalWidth,
+  buttonDepth,
+  actionButtonLengthWithoutCurves)
+
+volumeUp = buttonSketch(
+  cornerCurveRadius-volumeUpButtonDistanceFromTop-buttonRadius,
+  totalThickness/2+buttonRadius,
+  totalWidth,
+  buttonDepth,
+  volumeButtonLengthWithoutCurves)
+
+volumeDown = buttonSketch(
+  cornerCurveRadius-volumeDownButtonDistanceFromTop-buttonRadius,
+  totalThickness/2+buttonRadius,
+  totalWidth,
+  buttonDepth,
+  volumeButtonLengthWithoutCurves)
