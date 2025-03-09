@@ -5,6 +5,7 @@ I wanted an excuse to learn KCL better, I like the idea of reproducable 3D model
 This repository builds a 3D model of an iPhone 16 Pro using [Zoo.dev](https://zoo.dev/)'s [Modeling app](https://zoo.dev/modeling-app) in [KCL](https://zoo.dev/docs/kcl).
 
 ![iPhone 16 Pro Preview](./img/model.png)
+![iPhone 16 Pro Preview](./export/iPhone16Pro-bin.stl)
 
 ## Model Development
 
