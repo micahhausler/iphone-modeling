@@ -3,18 +3,29 @@
 // For technical specifications, see page 296-299
 // https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
 
+// XYZ Reference Lines
+// Comment out before exporting solid
+xBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> xLine(100, %)
+yBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> yLine(100, %)
+zBaseLine = startSketchOn(offsetPlane('XZ', offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> yLine(100, %)
 
 cornerCurveRadius = 19.23
 totalWidth = 71.45
+widthWithoutCurve = totalWidth - (cornerCurveRadius * 2)
+
 totalLength = 149.61
 bodyLength = -totalLength + cornerCurveRadius * 2
+lengthWithoutCurve = totalLength - (cornerCurveRadius * 2)
 
 edgeCurveHeight = 2.28
 totalThickness = 8.25
 bodyThickness = totalThickness - (edgeCurveHeight * 2)
-
-lengthWithoutCurve = totalLength - (cornerCurveRadius * 2)
-widthWithoutCurve = totalWidth - (cornerCurveRadius * 2)
 
 edgeCurveWidth = 2.41
 widthWithoutEdgeCurve = totalWidth - (edgeCurveWidth * 2)
@@ -73,6 +84,23 @@ fn rotatedOffset270Func(pts, startIndex, endIndex) {
   return [offsetRes[1], -offsetRes[0]]
 }
 
+fn rotatePoints90(pts) {
+  return map(pts, fn(pt) {
+    return [-pt[1], pt[0]]
+  })
+}
+fn rotatePoints180(pts) {
+  return map(pts, fn(pt) {
+    return [-pt[0], -pt[1]]
+  })
+}
+
+fn rotatePoints270(pts) {
+  return map(pts, fn(pt) {
+    return [pt[1], -pt[0]]
+  })
+}
+
 // cornerBezierCurves returns siz corner bezier curves
 fn cornerBezierCurves(pts, offsetFunc, z) {
   return bezierCurve({
@@ -123,18 +151,21 @@ fn iphoneBody(x, y, z) {
     |> extrude(length = bodyThickness)
 }
 
-phoneBody = iphoneBody(0, 0, 0)
-
 // center fill
-startSketchOn(offsetPlane('XY', offset = -edgeCurveHeight))
-  |> startProfileAt([cornerCurveRadius, 0], %)
-  |> xLine(widthWithoutCurve, %)
-  |> yLine(-lengthWithoutCurve, %)
-  |> xLine(-widthWithoutCurve, %)
-  |> close()
-  |> extrude(length = totalThickness)
+fn centerBodyFill(x, y, z) {
+  return startSketchOn(offsetPlane('XY', offset = z))
+    |> startProfileAt([x, y], %)
+    |> xLine(widthWithoutCurve, %)
+    |> yLine(-lengthWithoutCurve, %)
+    |> xLine(-widthWithoutCurve, %)
+    |> close()
+    |> extrude(length = totalThickness)
+}
 
-  // -------------- Edge --------------
+phoneBody = iphoneBody(0, -cornerCurveRadius, edgeCurveHeight)
+center = centerBodyFill(cornerCurveRadius, -cornerCurveRadius, 0)
+
+// -------------- Edge --------------
 // Edge curve points from diagram
 edgePoints = [
   [0, 0.0],
@@ -163,23 +194,31 @@ moreEdgePoints = [
   [2.41, 2.28]
 ]
 
-fn reversePts(xy) {
-  return [-xy[0], xy[1]]
-}
-
 fn reversePtsY(xy) {
   return [-xy[0], -xy[1]]
-}
-
-fn negativeY(xYpts) {
-  return [xYpts[0], -xYpts[1]]
 }
 
 fn negativeX(xYpts) {
   return [-xYpts[0], xYpts[1]]
 }
 
-fn edgeBezCurves(pts, offsetFunc, z) {
+fn negativeXList(pts) {
+  return map(pts, negativeX)
+}
+
+fn identity(pts) {
+  return pts
+}
+
+fn invert(x) {
+  return -x
+}
+
+fn xyOffset(xy, x, y) {
+  return [xy[0] + x, xy[1] + y]
+}
+
+fn edgeBezCurves(pts, offsetFunc) {
   return bezierCurve({
          to = offsetFunc(pts, 0, 3),
          control1 = offsetFunc(pts, 0, 1),
@@ -202,59 +241,17 @@ fn edgeBezCurves(pts, offsetFunc, z) {
        }, %)
 }
 
-fn reverseOffset(pts, startIndex, endIndex) {
-  return offsetFunc(pts, startIndex, endIndex)
-    |> reversePts(%)
-}
-
-fn reverseOffsetY(pts, startIndex, endIndex) {
-  return offsetFunc(pts, startIndex, endIndex)
-    |> reversePtsY(%)
-}
-
-fn reverseRotatedOffset180(pts, startIndex, endIndex) {
-  return rotatedOffset180Func(pts, startIndex, endIndex)
-    |> reversePts(%)
-}
-
-fn edgeCurves(points, x, y, z) {
+fn edgeCurve(x, y, z, zPointModifierFunc) {
+  points = map(  negativeXList(moreEdgePoints), fn(pair) {
+    return [pair[0], zPointModifierFunc(pair[1])]
+  })
   rad = cornerCurveRadius - edgeCurveWidth
-  return startSketchOn(offsetPlane('XZ', offset = z))
-    |> startProfileAt([x, y], %)
-    |> edgeBezCurves(points, offsetFunc, %)
+  return startSketchOn(offsetPlane('XZ', offset = y))
+    |> startProfileAt([x, z], %)
+    |> edgeBezCurves(points, offsetFunc)
     |> xLine(-rad, %)
-    |> yLine(-edgeCurveHeight, %)
+    |> yLine(zPointModifierFunc(-edgeCurveHeight), %)
     |> close()
-}
-
-fn negativeYList(pts) {
-  return map(pts, negativeY)
-}
-
-fn negativeXList(pts) {
-  return map(pts, negativeX)
-}
-
-fn negativeXYList(pts) {
-  return negativeYList(negativeXList(pts))
-}
-
-fn identity(pts) {
-  return pts
-}
-
-fn invert(x) {
-  return -x
-}
-
-fn pairOffsetxy(pair, x, y) {
-  return [pair[0] + x, pair[1] + y]
-}
-fn pairOffsetX(xy, xOffset) {
-  return pairOffsetxy(xy, xOffset, 0)
-}
-fn pairOffsetY(xy, yOffset) {
-  return pairOffsetxy(xy, 0, yOffset)
 }
 
 // Generate a bezier curve segment for a sweep Path
@@ -266,202 +263,232 @@ fn generateBezierCurve(pts, offsetFunc, ptIdx, z) {
   }, %)
 }
 
-fn generateEdgeCornerCurves(startPointOffsetFunc, rotationFunc, pointFunc, segment, zOffset) {
-  segmentStart = segment * 3
-  startPoint0 = rotationFunc(  pointFunc(cornerCurvePoints), 0, segmentStart)
-  startPoint = startPointOffsetFunc(startPoint0)
-  sweepPath = startSketchOn(offsetPlane('XY', offset = zOffset))
-    |> startProfileAt(startPoint, %)
-    |> generateBezierCurve(pointFunc(cornerCurvePoints), rotationFunc, segmentStart, %)
-  curves = edgeCurves(pointFunc(moreEdgePoints), startPoint[0], zOffset, -startPoint[1])
-    |> sweep(path = sweepPath)
-
-  return [curves, sweepPath]
+fn offsetPoints(points, x, y) {
+  return map(points, fn(point) {
+    return [point[0] + x, point[1] + y]
+  })
 }
 
-fn spOffsetFunc(x, y) {
-  return fn(xy) {
-    return [x + xy[0], y + xy[1]]
+fn edgeCornerCurveGenerator(offset) {
+  return fn(segment) {
+    curvePointModifierFunc = offset.curvePointModifierFunc
+    basePoints = curvePointModifierFunc(cornerCurvePoints)
+    offsetCurvePoints = offsetPoints(basePoints, offset.x, offset.y)
+    sp = xyOffset(    rotatedOffset180Func(    negativeXList(offsetCurvePoints), 0, segment * 3), offset.x, offset.y)
+
+    sweepPath = startSketchOn(offsetPlane('XY', offset = offset.z))
+      |> startProfileAt(sp, %)
+      |> generateBezierCurve(negativeXList(offsetCurvePoints), rotatedOffset180Func, segment * 3, %)
+    curves = edgeCurve(sp[0], -sp[1], 0 + offset.z, offset.zModifierFunc)
+      |> sweep(path = sweepPath)
+
+    zmodifier = offset.zModifierFunc
+    // close/extrude each sweepPath so that we have a translatable/rotatable solid
+    closedSweep = sweepPath
+      |> close()
+      |> extrude(length = zmodifier(.01))
+    return [curves, closedSweep]
   }
 }
-
-fn curveGeneratorXYZOffset(rotationFunc, x, y, z) {
-  return fn(idx) {
-    return generateEdgeCornerCurves(    spOffsetFunc(x, y), rotationFunc, negativeXList, idx, z)
-  }
-}
-
-// 4 upper corner edge curve points
-map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset180Func, 0, 0, bodyThickness))
-map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset90Func, widthWithoutCurve + cornerCurveRadius, cornerCurveRadius, bodyThickness))
-map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset270Func, cornerCurveRadius, -totalLength + cornerCurveRadius, bodyThickness))
-map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(offsetFunc, totalWidth, -totalLength + 2 * cornerCurveRadius, bodyThickness))
 
 // /*
-// bottom corners
-map(map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset180Func, -cornerCurveRadius, -cornerCurveRadius, 0)), fn(solidPath) {
-  solid = solidPath[0]
-  path = solidPath[1]
-    |> close()
-    |> extrude(length = -bodyThickness)
-    |> rotate(roll = 180, pitch = 0, yaw = 270)
-  return solid
-    |> rotate(roll = 180, pitch = 0, yaw = 270)
-})
-map(map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset180Func, -totalWidth, 0, 0)), fn(solidPath) {
-  solid = solidPath[0]
-  path = solidPath[1]
-    |> close()
-    |> extrude(length = -bodyThickness)
-    |> rotate(roll = 180, pitch = 0, yaw = 180)
-  return solid
-    |> rotate(roll = 180, pitch = 0, yaw = 180)
-})
-map(map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset180Func, -lengthWithoutCurve - cornerCurveRadius, totalWidth - cornerCurveRadius, 0)), fn(solidPath) {
-  solid = solidPath[0]
-  path = solidPath[1]
-    |> close()
-    |> extrude(length = -bodyThickness)
-    |> rotate(roll = 180, pitch = 0, yaw = 90)
-  return solid
-    |> rotate(roll = 180, pitch = 0, yaw = 90)
-})
-map(map([0, 1, 2, 3, 4, 5], curveGeneratorXYZOffset(rotatedOffset180Func, 0, lengthWithoutCurve, 0)), fn(solidPath) {
-  solid = solidPath[0]
-  path = solidPath[1]
-    |> close()
-    |> extrude(length = -bodyThickness)
-    |> rotate(roll = 180, pitch = 0, yaw = 0)
-  return solid
-    |> rotate(roll = 180, pitch = 0, yaw = 0)
-})
+firstCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = identity,
+  curvePointModifierFunc = identity,
+  x = 0,
+  y = -cornerCurveRadius,
+  z = totalThickness - edgeCurveHeight
+}))
+secondCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = identity,
+  curvePointModifierFunc = rotatePoints90,
+  x = totalWidth - cornerCurveRadius,
+  y = 0,
+  z = totalThickness - edgeCurveHeight
+}))
+thirdCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = identity,
+  curvePointModifierFunc = rotatePoints180,
+  x = totalWidth,
+  y = -totalLength + cornerCurveRadius,
+  z = totalThickness - edgeCurveHeight
+}))
+fourthCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = identity,
+  curvePointModifierFunc = rotatePoints270,
+  x = cornerCurveRadius,
+  y = -totalLength,
+  z = totalThickness - edgeCurveHeight
+}))
+
+fifthCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = invert,
+  curvePointModifierFunc = identity,
+  x = 0,
+  y = -cornerCurveRadius,
+  z = edgeCurveHeight
+}))
+sixthCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = invert,
+  curvePointModifierFunc = rotatePoints90,
+  x = totalWidth - cornerCurveRadius,
+  y = 0,
+  z = edgeCurveHeight
+}))
+seventhCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = invert,
+  curvePointModifierFunc = rotatePoints180,
+  x = totalWidth,
+  y = -totalLength + cornerCurveRadius,
+  z = edgeCurveHeight
+}))
+eighthCornerSolids = map([0, 1, 2, 3, 4, 5], edgeCornerCurveGenerator({
+  zModifierFunc = invert,
+  curvePointModifierFunc = rotatePoints270,
+  x = cornerCurveRadius,
+  y = -totalLength,
+  z = edgeCurveHeight
+}))
+
 // */
 
 
-fn edgeLineCurvesCurves(points, x, y, z, xyzFuncs) {
-  xFunc = xyzFuncs.xFunc
-  yFunc = xyzFuncs.yFunc
-  zFunc = xyzFuncs.zFunc
-  pointFunc = xyzFuncs.pointFunc
-  xx = xFunc(x)
-  yy = yFunc(y)
-  zz = zFunc(z)
-  ppoints = pointFunc(points)
-
-  rad = cornerCurveRadius - edgeCurveWidth
-  return startSketchOn(offsetPlane('XZ', offset = zz))
-    |> startProfileAt([xx, yy], %)
-    |> edgeBezCurves(ppoints, offsetFunc, %)
-    |> xLine(xFunc(cornerCurveRadius - edgeCurveWidth), %)
-    |> yLine(zFunc(-edgeCurveHeight), %)
+fn edgeLineSketch(edgeArgs) {
+  xModifierFunc = edgeArgs.xModifierFunc
+  yModifierFunc = edgeArgs.yModifierFunc
+  zModifierFunc = edgeArgs.zModifierFunc
+  pts = map(moreEdgePoints, fn(xz) {
+    return [
+      xModifierFunc(xz[0]),
+      zModifierFunc(xz[1])
+    ]
+  })
+  return startSketchOn(offsetPlane(edgeArgs.plane, offset = edgeArgs.y))
+    |> startProfileAt([edgeArgs.x, edgeArgs.z], %)
+    |> edgeBezCurves(pts, offsetFunc)
+    |> xLine(xModifierFunc(cornerCurveRadius - edgeCurveWidth), %)
+    |> yLine(zModifierFunc(-edgeCurveHeight), %)
     |> close()
+    |> extrude(length = edgeArgs.length)
 }
 
-fn generateEdgeCurves(startPointOffsetFunc, z, length, xyzFuncs) {
-  startPoint = startPointOffsetFunc([0, 0])
-  return edgeLineCurvesCurves(moreEdgePoints, startPoint[0], z, -startPoint[1], xyzFuncs)
-    |> extrude(length = length)
-}
-
-// initial edge
-generateEdgeCurves(spOffsetFunc(0, 0), bodyThickness, lengthWithoutCurve, {
-  xFunc = identity,
-  yFunc = identity,
-  zFunc = identity,
-  pointFunc = identity
+upperLeftEdge = edgeLineSketch({
+  plane = 'XZ',
+  length = lengthWithoutCurve,
+  x = 0,
+  y = cornerCurveRadius,
+  z = totalThickness - edgeCurveHeight,
+  xModifierFunc = identity,
+  yModifierFunc = identity,
+  zModifierFunc = identity,
+  xyRotationFunc = identity
 })
-
-// top edge
-generateEdgeCurves(spOffsetFunc(-cornerCurveRadius, totalWidth - cornerCurveRadius), bodyThickness, widthWithoutCurve, {
-       xFunc = identity,
-       yFunc = identity,
-       zFunc = identity,
-       pointFunc = identity
-     })
-  |> rotate(roll = 0, pitch = 00, yaw = 270)
-
-// Bottom edge
-generateEdgeCurves(spOffsetFunc(-totalLength + cornerCurveRadius, -cornerCurveRadius), bodyThickness, widthWithoutCurve, {
-       xFunc = identity,
-       yFunc = identity,
-       zFunc = identity,
-       pointFunc = identity
-     })
-  |> rotate(roll = 0, pitch = 00, yaw = 90)
-
-// opposite top edge
-generateEdgeCurves(spOffsetFunc(-totalWidth, 0), -bodyThickness, lengthWithoutCurve, {
-  xFunc = invert,
-  yFunc = invert,
-  zFunc = identity,
-  pointFunc = negativeXList
+lowerLeftEdge = edgeLineSketch({
+  plane = 'XZ',
+  length = lengthWithoutCurve,
+  x = 0,
+  y = cornerCurveRadius,
+  z = edgeCurveHeight,
+  xModifierFunc = identity,
+  yModifierFunc = identity,
+  zModifierFunc = invert,
+  xyRotationFunc = identity
 })
-
-// /*
-// underside edge
-generateEdgeCurves(spOffsetFunc(0, 0), 0, lengthWithoutCurve, {
-  xFunc = identity,
-  yFunc = invert,
-  zFunc = invert,
-  pointFunc = negativeYList
+upperRightEdge = edgeLineSketch({
+  plane = 'XZ',
+  length = lengthWithoutCurve,
+  x = totalWidth,
+  y = cornerCurveRadius,
+  z = totalThickness - edgeCurveHeight,
+  xModifierFunc = invert,
+  yModifierFunc = identity,
+  zModifierFunc = identity,
+  xyRotationFunc = identity
 })
-
-// opposite top edge
-generateEdgeCurves(spOffsetFunc(-totalWidth, 0), 0, lengthWithoutCurve, {
-  xFunc = invert,
-  yFunc = invert,
-  zFunc = invert,
-  pointFunc = negativeXYList,
-  pointRotationFunc = identity
+lowerRightEdge = edgeLineSketch({
+  plane = 'XZ',
+  length = lengthWithoutCurve,
+  x = totalWidth,
+  y = cornerCurveRadius,
+  z = edgeCurveHeight,
+  xModifierFunc = invert,
+  yModifierFunc = identity,
+  zModifierFunc = invert,
+  xyRotationFunc = identity
 })
-
-// underside top edge
-generateEdgeCurves(spOffsetFunc(-totalLength + cornerCurveRadius, cornerCurveRadius), 0, widthWithoutCurve, {
-       xFunc = identity,
-       yFunc = invert,
-       zFunc = invert,
-       pointFunc = negativeYList
-     })
-  |> rotate(roll = 0, pitch = 00, yaw = 90)
-
-// underside top edge
-generateEdgeCurves(spOffsetFunc(-cornerCurveRadius, -totalWidth + cornerCurveRadius), 0, widthWithoutCurve, {
-       xFunc = identity,
-       yFunc = invert,
-       zFunc = invert,
-       pointFunc = negativeYList
-     })
-  |> rotate(roll = 0, pitch = 00, yaw = 270)
-  // */
+// for YZ planes, 'x' and 'y' are inverted, as are modifier funcs
+upperTopEdge = edgeLineSketch({
+  plane = 'YZ',
+  length = widthWithoutCurve,
+  x = 0,
+  y = cornerCurveRadius,
+  z = totalThickness - edgeCurveHeight,
+  xModifierFunc = invert,
+  yModifierFunc = identity,
+  zModifierFunc = identity,
+  xyRotationFunc = identity
+})
+lowerTopEdge = edgeLineSketch({
+  plane = 'YZ',
+  length = widthWithoutCurve,
+  x = 0,
+  y = cornerCurveRadius,
+  z = edgeCurveHeight,
+  xModifierFunc = invert,
+  yModifierFunc = identity,
+  zModifierFunc = invert,
+  xyRotationFunc = identity
+})
+upperBottomEdge = edgeLineSketch({
+  plane = 'YZ',
+  length = widthWithoutCurve,
+  x = -totalLength,
+  y = cornerCurveRadius,
+  z = totalThickness - edgeCurveHeight,
+  xModifierFunc = identity,
+  yModifierFunc = identity,
+  zModifierFunc = identity,
+  xyRotationFunc = identity
+})
+lowerBottomEdge = edgeLineSketch({
+  plane = 'YZ',
+  length = widthWithoutCurve,
+  x = -totalLength,
+  y = cornerCurveRadius,
+  z = edgeCurveHeight,
+  xModifierFunc = identity,
+  yModifierFunc = identity,
+  zModifierFunc = invert,
+  xyRotationFunc = identity
+})
 
 // LENS
-
 cameraEdgeOffset = 1.04
+
 cameraBaseRadius = 14.17 - cameraEdgeOffset
 cameraBaseWidth = 45.22 - cameraEdgeOffset
 cameraBaseWidthWithoutCurves = cameraBaseWidth - (2 * cameraBaseRadius)
 cameraBaseLength = 46.45 - cameraEdgeOffset
 cameraBaseLengthWithoutCurves = cameraBaseLength - (2 * cameraBaseRadius)
-
 cameraPlateauOffset = 4.70
+
 cameraPlateauWidth = 41.56 - cameraPlateauOffset
 cameraPlateauWidthWithoutCurves = cameraPlateauWidth - (2 * cameraBaseRadius)
 cameraPlateauLength = 42.88 - cameraPlateauOffset
 cameraPlateauLengthWithoutCurves = cameraPlateauLength - (2 * cameraBaseRadius)
-
 cameraPlateauThickness = 2.05
-cameraThickness = 4.28 - cameraPlateauThickness
 
+cameraThickness = 4.28 - cameraPlateauThickness
 camera1HeightOffset = 14.17
+
 camera1WidthOffset = 14.17
 camera2HeightOffset = 33.41
 camera2WidthOffset = 14.17
 camera3HeightOffset = 23.79
 camera3WidthOffset = 32.16
-
 cameraLensDiameter = 16.02
-cameraLensRadius = cameraLensDiameter / 2
 
+cameraLensRadius = cameraLensDiameter / 2
 fn cameraBody(x, y, z) {
   cameraBase = startSketchOn(offsetPlane('XY', offset = z))
     |> startProfileAt([
@@ -556,40 +583,43 @@ fn cameraBody(x, y, z) {
     cameraPlateau0,
     cameraPlateau
   ])
-  return cameraPlateau
+  return lofted
 }
 
 fn lenses(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z + totalThickness - edgeCurveHeight + cameraPlateauThickness))
+  return startSketchOn(offsetPlane('XY', offset = z))
     |> circle({
-         center = [x, y + cornerCurveRadius],
+         center = [x, y],
          radius = cameraLensRadius
        }, %)
     |> extrude(%, length = cameraThickness)
 }
 
-cameraBase = cameraBody(0, 0, totalThickness - edgeCurveHeight)
-cameraLens1 = lenses(camera1WidthOffset, -camera1HeightOffset, 0)
-cameraLens2 = lenses(camera2WidthOffset, -camera2HeightOffset, 0)
-cameraLens3 = lenses(camera3WidthOffset, -camera3HeightOffset, 0)
+buttonDepth = 0.45
+
+// /*
+cameraBase = cameraBody(0, -cornerCurveRadius, totalThickness)
+cameraLens1 = lenses(camera1WidthOffset, -camera1HeightOffset, totalThickness + cameraPlateauThickness)
+cameraLens2 = lenses(camera2WidthOffset, -camera2HeightOffset, totalThickness + cameraPlateauThickness)
+cameraLens3 = lenses(camera3WidthOffset, -camera3HeightOffset, totalThickness + cameraPlateauThickness)
+// */
+
 
 // Buttons
 
 
-buttonDepth = 0.45
 buttonWidth = 2.66
 buttonRadius = buttonWidth / 2
-
 powerButtonLengthWithoutCurves = 8.85 * 2 - (buttonRadius * 2)
+
 powerButtonDistanceFromTop = 55.33 - 8.85
-
 actionButtonLengthWithoutCurves = 3.45 * 2 - (buttonRadius * 2)
-actionButtonDistanceFromTop = 34.08 - 3.45
 
+actionButtonDistanceFromTop = 34.08 - 3.45
 volumeButtonLengthWithoutCurves = 5.60 * 2 - (buttonRadius * 2)
+
 volumeUpButtonDistanceFromTop = 48.23 - 5.60
 volumeDownButtonDistanceFromTop = 62.43 - 5.60
-
 fn buttonSketch(x, y, z, depth, buttonLength) {
   squareSketch = startSketchOn(offsetPlane('YZ', offset = z))
     |> startProfileAt([x, y], %)
@@ -602,11 +632,95 @@ fn buttonSketch(x, y, z, depth, buttonLength) {
   return squareSketch
 }
 
-powerButton = buttonSketch(cornerCurveRadius - powerButtonDistanceFromTop - buttonRadius, bodyThickness / 2 + buttonRadius, 0, -buttonDepth, powerButtonLengthWithoutCurves)
+buttonHeightOffset = totalThickness / 2 + buttonRadius
 
-actionButton = buttonSketch(cornerCurveRadius - actionButtonDistanceFromTop - buttonRadius, bodyThickness / 2 + buttonRadius, totalWidth, buttonDepth, actionButtonLengthWithoutCurves)
+fn extendArray(orig, extension) {
+  return reduce(extension, orig, fn(element, accumulator) {
+    return push(accumulator, element)
+  })
+}
 
-volumeUp = buttonSketch(cornerCurveRadius - volumeUpButtonDistanceFromTop - buttonRadius, bodyThickness / 2 + buttonRadius, totalWidth, buttonDepth, volumeButtonLengthWithoutCurves)
+// /*
+powerButton = buttonSketch(-powerButtonDistanceFromTop - buttonRadius, buttonHeightOffset, 0, -buttonDepth, powerButtonLengthWithoutCurves)
+actionButton = buttonSketch(-actionButtonDistanceFromTop - buttonRadius, buttonHeightOffset, totalWidth, buttonDepth, actionButtonLengthWithoutCurves)
+volumeUp = buttonSketch(-volumeUpButtonDistanceFromTop - buttonRadius, buttonHeightOffset, totalWidth, buttonDepth, volumeButtonLengthWithoutCurves)
+volumeDown = buttonSketch(-volumeDownButtonDistanceFromTop - buttonRadius, buttonHeightOffset, totalWidth, buttonDepth, volumeButtonLengthWithoutCurves)
+// */
 
-volumeDown = buttonSketch(cornerCurveRadius - volumeDownButtonDistanceFromTop - buttonRadius, bodyThickness / 2 + buttonRadius, totalWidth, buttonDepth, volumeButtonLengthWithoutCurves)
 
+/*
+
+// All solids are translatable/rotatable together
+
+fn mergeArrays(arrays) {
+  return reduce(arrays, [], fn(arr, result) {
+    return extendArray(result, arr)
+  })
+}
+
+fn translator(translateArgs) {
+  x = translateArgs.x
+  y = translateArgs.y
+  z = translateArgs.z
+  roll = translateArgs.roll
+  pitch = translateArgs.pitch
+  yaw = translateArgs.yaw
+  return fn(solid) {
+    return solid
+      |> rotate(roll = roll, pitch = pitch, yaw = yaw)
+      |> translate(translate = [x, y, z])
+  }
+}
+
+translationArgs = {
+  x = -totalWidth,
+  y = totalLength,
+  z = 0,
+  roll = -45,
+  pitch = 180,
+  yaw = 0
+}
+
+bodySolids = [phoneBody, center]
+map(bodySolids, translator(translationArgs))
+
+cornerSolids = mergeArrays([
+  mergeArrays(firstCornerSolids),
+  mergeArrays(secondCornerSolids),
+  mergeArrays(thirdCornerSolids),
+  mergeArrays(fourthCornerSolids),
+  mergeArrays(fifthCornerSolids),
+  mergeArrays(sixthCornerSolids),
+  mergeArrays(seventhCornerSolids),
+  mergeArrays(eighthCornerSolids)
+])
+map(cornerSolids, translator(translationArgs))
+
+edgeSolids = [
+  upperLeftEdge,
+  upperRightEdge,
+  upperTopEdge,
+  upperBottomEdge,
+  lowerTopEdge,
+  lowerBottomEdge,
+  lowerLeftEdge,
+  lowerRightEdge
+]
+map(edgeSolids, translator(translationArgs))
+
+cameraSolids = [
+  cameraBase,
+  cameraLens1,
+  cameraLens2,
+  cameraLens3
+]
+map(cameraSolids, translator(translationArgs))
+
+buttonSolids = [
+  powerButton,
+  actionButton,
+  volumeUp,
+  volumeDown
+]
+map(buttonSolids, translator(translationArgs))
+*/
