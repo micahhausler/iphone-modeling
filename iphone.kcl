@@ -3,17 +3,18 @@
 // For technical specifications, see page 296-299
 // https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
 
+
 // XYZ Reference Lines
 // Comment out before exporting solid
-xBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
-  |> startProfileAt([0, 0], %)
-  |> xLine(100, %)
-yBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
-  |> startProfileAt([0, 0], %)
-  |> yLine(100, %)
-zBaseLine = startSketchOn(offsetPlane('XZ', offset = 0))
-  |> startProfileAt([0, 0], %)
-  |> yLine(100, %)
+// xBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
+// |> startProfileAt([0, 0], %)
+// |> xLine(100, %)
+// yBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
+// |> startProfileAt([0, 0], %)
+// |> yLine(100, %)
+// zBaseLine = startSketchOn(offsetPlane('XZ', offset = 0))
+// |> startProfileAt([0, 0], %)
+// |> yLine(100, %)
 
 cornerCurveRadius = 19.23
 totalWidth = 71.45
@@ -255,7 +256,7 @@ fn edgeCurve(x, y, z, zPointModifierFunc) {
 }
 
 // Generate a bezier curve segment for a sweep Path
-fn generateBezierCurve(pts, offsetFunc, ptIdx, z) {
+fn generateBezierCurve(pts, offsetFunc, ptIdx) {
   return bezierCurve({
     to = offsetFunc(pts, ptIdx, ptIdx + 3),
     control1 = offsetFunc(pts, ptIdx, ptIdx + 1),
@@ -275,19 +276,13 @@ fn edgeCornerCurveGenerator(offset) {
     basePoints = curvePointModifierFunc(cornerCurvePoints)
     offsetCurvePoints = offsetPoints(basePoints, offset.x, offset.y)
     sp = xyOffset(    rotatedOffset180Func(    negativeXList(offsetCurvePoints), 0, segment * 3), offset.x, offset.y)
-
     sweepPath = startSketchOn(offsetPlane('XY', offset = offset.z))
       |> startProfileAt(sp, %)
-      |> generateBezierCurve(negativeXList(offsetCurvePoints), rotatedOffset180Func, segment * 3, %)
+      |> generateBezierCurve(negativeXList(offsetCurvePoints), rotatedOffset180Func, segment * 3)
+
     curves = edgeCurve(sp[0], -sp[1], 0 + offset.z, offset.zModifierFunc)
       |> sweep(path = sweepPath)
-
-    zmodifier = offset.zModifierFunc
-    // close/extrude each sweepPath so that we have a translatable/rotatable solid
-    closedSweep = sweepPath
-      |> close()
-      |> extrude(length = zmodifier(.01))
-    return [curves, closedSweep]
+    return [curves, sweepPath]
   }
 }
 
@@ -648,9 +643,8 @@ volumeDown = buttonSketch(-volumeDownButtonDistanceFromTop - buttonRadius, butto
 // */
 
 
-/*
-
-// All solids are translatable/rotatable together
+/* // All solids are translatable/rotatable together
+// except for sweep paths on corner curves
 
 fn mergeArrays(arrays) {
   return reduce(arrays, [], fn(arr, result) {
@@ -722,5 +716,4 @@ buttonSolids = [
   volumeUp,
   volumeDown
 ]
-map(buttonSolids, translator(translationArgs))
-*/
+map(buttonSolids, translator(translationArgs)) */

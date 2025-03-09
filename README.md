@@ -23,7 +23,7 @@ This repository builds a 3D model of an iPhone 16 Pro using [Zoo.dev](https://zo
 - [ ] `hole()` speaker holes
 
 **Code Cleanup**
-- [x] use `rotate()` instead of all the manual rotation/function passing
+- [x] clean up x/y/z translation of corners/edges
 - [x] ~~Fillet edge and corner curves?~~ Simpler, but not as accurate on corner curves
 - [x] Figure out how to remove sweep paths for corner/edge volumes after use. (After the sweep I ended up making the path into a solid and calling `rotate()` on it too. Its kind of a hack but the solid hides inside the phone body)
 
