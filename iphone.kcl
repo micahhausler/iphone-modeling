@@ -3,7 +3,6 @@
 // For technical specifications, see page 296-299
 // https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
 
-
 // XYZ Reference Lines
 // Comment out before exporting solid
 // xBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
@@ -136,34 +135,72 @@ fn cornerBezierCurves(pts, offsetFunc, z) {
        }, %)
 }
 
+edgeToUsbCstart = 30.86
+edgeToUsbCend = 40.58
+curveToUsbC = edgeToUsbCstart-cornerCurveRadius
+usbcWidth = edgeToUsbCend-edgeToUsbCstart
+usbCdepth = 6.5
+
+usbcDiameter = 3.14
+usbcRadius = usbcDiameter/2
+usbcSideLength = usbcWidth-usbcDiameter
+
 // generate iphone body
 fn iphoneBody(x, y, z) {
   return startSketchOn(offsetPlane('XY', offset = z))
     |> startProfileAt([x, y], %)
-    |> yLine(-lengthWithoutCurve, %)
+    |> yLine(length=-lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
-    |> xLine(widthWithoutCurve, %)
+    |> xLine(length=curveToUsbC)
+    |> yLine(length=usbCdepth)
+    |> xLine(length=usbcWidth)
+    |> yLine(length=-usbCdepth)
+    |> xLine(length=curveToUsbC)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset90Func, %)
-    |> yLine(lengthWithoutCurve, %)
+    |> yLine(length=lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
-    |> xLine(-widthWithoutCurve, %)
+    |> xLine(length=-widthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset270Func, %)
     |> close()
     |> extrude(length = bodyThickness)
+}
+
+fn usbcHole(x, y, z) {
+  return startSketchOn(offsetPlane('XZ', offset = y))
+    |> startProfileAt([x, z], %)
+    |> xLine(length=usbcSideLength)
+    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> xLine(length=-usbcSideLength)
+    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> close()
+}
+
+fn usbcBox(x,y,z){
+  cutout = usbcHole(x+usbcRadius,y,z+(bodyThickness-usbcDiameter)/2)
+  return startSketchOn(offsetPlane('XZ', offset = y))
+    |> startProfileAt([x, z], %)
+    |> xLine(length=usbcWidth)
+    |> yLine(length=bodyThickness)
+    |> xLine(length=-usbcWidth)
+    |> yLine(length=-bodyThickness)
+    |> close()
+    |> hole(cutout, %)
+    |> extrude(length =-usbCdepth)
 }
 
 // center fill
 fn centerBodyFill(x, y, z) {
   return startSketchOn(offsetPlane('XY', offset = z))
     |> startProfileAt([x, y], %)
-    |> xLine(widthWithoutCurve, %)
-    |> yLine(-lengthWithoutCurve, %)
-    |> xLine(-widthWithoutCurve, %)
+    |> xLine(length=widthWithoutCurve)
+    |> yLine(length=-lengthWithoutCurve)
+    |> xLine(length=-widthWithoutCurve)
     |> close()
     |> extrude(length = totalThickness)
 }
 
 phoneBody = iphoneBody(0, -cornerCurveRadius, edgeCurveHeight)
+boxUsbc = usbcBox(edgeToUsbCstart,totalLength,edgeCurveHeight)
 center = centerBodyFill(cornerCurveRadius, -cornerCurveRadius, 0)
 
 // -------------- Edge --------------
@@ -250,8 +287,8 @@ fn edgeCurve(x, y, z, zPointModifierFunc) {
   return startSketchOn(offsetPlane('XZ', offset = y))
     |> startProfileAt([x, z], %)
     |> edgeBezCurves(points, offsetFunc)
-    |> xLine(-rad, %)
-    |> yLine(zPointModifierFunc(-edgeCurveHeight), %)
+    |> xLine(length=-rad)
+    |> yLine(length=zPointModifierFunc(-edgeCurveHeight))
     |> close()
 }
 
@@ -361,8 +398,8 @@ fn edgeLineSketch(edgeArgs) {
   return startSketchOn(offsetPlane(edgeArgs.plane, offset = edgeArgs.y))
     |> startProfileAt([edgeArgs.x, edgeArgs.z], %)
     |> edgeBezCurves(pts, offsetFunc)
-    |> xLine(xModifierFunc(cornerCurveRadius - edgeCurveWidth), %)
-    |> yLine(zModifierFunc(-edgeCurveHeight), %)
+    |> xLine(length=xModifierFunc(cornerCurveRadius - edgeCurveWidth))
+    |> yLine(length=zModifierFunc(-edgeCurveHeight))
     |> close()
     |> extrude(length = edgeArgs.length)
 }
@@ -490,22 +527,22 @@ fn cameraBody(x, y, z) {
          x + cameraEdgeOffset,
          y + cornerCurveRadius - cameraBaseRadius - cameraEdgeOffset
        ], %)
-    |> yLine(-cameraBaseLengthWithoutCurves, %, $cameraEdge1)
+    |> yLine(length=-cameraBaseLengthWithoutCurves, tag=$cameraEdge1)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> xLine(cameraBaseWidthWithoutCurves, %, $cameraEdge2)
+    |> xLine(length=cameraBaseWidthWithoutCurves, tag=$cameraEdge2)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> yLine(cameraBaseLengthWithoutCurves, %, $cameraEdge3)
+    |> yLine(length=cameraBaseLengthWithoutCurves, tag=$cameraEdge3)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> xLine(-cameraBaseWidthWithoutCurves, %, $cameraEdge4)
+    |> xLine(length=-cameraBaseWidthWithoutCurves, tag=$cameraEdge4)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
@@ -524,22 +561,22 @@ fn cameraBody(x, y, z) {
          x + midPlateauCurveXOffset,
          y + cornerCurveRadius - cameraBaseRadius - midPlateauCurveXOffset
        ], %)
-    |> yLine(-plateauCurveMidSketchLength, %)
+    |> yLine(length=-plateauCurveMidSketchLength)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> xLine(plateauCurveMidSketchWidth, %)
+    |> xLine(length=plateauCurveMidSketchWidth)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> yLine(plateauCurveMidSketchLength, %)
+    |> yLine(length=plateauCurveMidSketchLength)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> xLine(-plateauCurveMidSketchWidth, %)
+    |> xLine(length=-plateauCurveMidSketchWidth)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
@@ -551,22 +588,22 @@ fn cameraBody(x, y, z) {
          x + cameraPlateauOffset,
          y + cornerCurveRadius - cameraBaseRadius - cameraPlateauOffset
        ], %)
-    |> yLine(-cameraPlateauLengthWithoutCurves, %)
+    |> yLine(length=-cameraPlateauLengthWithoutCurves)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> xLine(cameraPlateauWidthWithoutCurves, %)
+    |> xLine(length=cameraPlateauWidthWithoutCurves)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> yLine(cameraPlateauLengthWithoutCurves, %)
+    |> yLine(length=cameraPlateauLengthWithoutCurves)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
        }, %)
-    |> xLine(-cameraPlateauWidthWithoutCurves, %)
+    |> xLine(length=-cameraPlateauWidthWithoutCurves)
     |> tangentialArc({
          radius = cameraBaseRadius,
          offset = 90
@@ -583,10 +620,10 @@ fn cameraBody(x, y, z) {
 
 fn lenses(x, y, z) {
   return startSketchOn(offsetPlane('XY', offset = z))
-    |> circle({
+    |> circle(
          center = [x, y],
          radius = cameraLensRadius
-       }, %)
+       )
     |> extrude(%, length = cameraThickness)
 }
 
@@ -618,9 +655,9 @@ volumeDownButtonDistanceFromTop = 62.43 - 5.60
 fn buttonSketch(x, y, z, depth, buttonLength) {
   squareSketch = startSketchOn(offsetPlane('YZ', offset = z))
     |> startProfileAt([x, y], %)
-    |> xLine(-buttonLength, %)
+    |> xLine(length=-buttonLength)
     |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
-    |> xLine(buttonLength, %)
+    |> xLine(length=buttonLength)
     |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
     |> close()
     |> extrude(%, length = depth)

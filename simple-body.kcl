@@ -105,23 +105,65 @@ fn cornerBezierCurves(pts, offsetFunc, z) {
        }, %)
 }
 
+// usb-c
+
+edgeToUsbCstart = 30.86
+edgeToUsbCend = 40.58
+curveToUsbC = edgeToUsbCstart-cornerCurveRadius
+usbcWidth = edgeToUsbCend-edgeToUsbCstart
+usbCdepth = 6.5
+
+usbcDiameter = 3.14
+usbcRadius = usbcDiameter/2
+usbcSideLength = usbcWidth-usbcDiameter
+
 // generate iphone body
 fn iphoneBody(x, y, z) {
   return startSketchOn(offsetPlane('XY', offset = z))
     |> startProfileAt([x, y], %)
-    |> yLine(-lengthWithoutCurve, %)
+    |> yLine(length=-lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
-    |> xLine(widthWithoutCurve, %)
+    |> xLine(length=curveToUsbC)
+    |> yLine(length=usbCdepth)
+    |> xLine(length=usbcWidth)
+    |> yLine(length=-usbCdepth)
+    |> xLine(length=curveToUsbC)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset90Func, %)
-    |> yLine(lengthWithoutCurve, %)
+    |> yLine(length=lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
-    |> xLine(-widthWithoutCurve, %)
+    |> xLine(length=-widthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset270Func, %)
     |> close()
-    |> extrude(length = totalThickness)
+    |> extrude(length = bodyThickness)
 }
 
 phoneBody = iphoneBody(0, 0, 0)
+
+fn usbcHole(x, y, z) {
+  return startSketchOn(offsetPlane('XZ', offset = y))
+    |> startProfileAt([x, z], %)
+    |> xLine(length=usbcSideLength)
+    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> xLine(length=-usbcSideLength)
+    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> close()
+}
+
+fn usbcBox(x,y,z){
+  cutout = usbcHole(x+usbcRadius,y,z+(bodyThickness-usbcDiameter)/2)
+  return startSketchOn(offsetPlane('XZ', offset = y))
+    |> startProfileAt([x, z], %)
+    |> xLine(length=usbcWidth)
+    |> yLine(length=bodyThickness)
+    |> xLine(length=-usbcWidth)
+    |> yLine(length=-bodyThickness)
+    |> close()
+    |> hole(cutout, %)
+    |> extrude(length =-usbCdepth)
+}
+
+usbcBox(edgeToUsbCstart,totalLength-cornerCurveRadius,0)
+
 
 
 cameraEdgeOffset = 1.04
@@ -167,20 +209,20 @@ camera = cameraBody(0,0,totalThickness)
 //*/
 
 
-// generate camera body
+
 fn simplePhoneBody(x, y, z) {
   return startSketchOn(offsetPlane('XY', offset = z))
     |> startProfileAt([x, y+cornerCurveRadius], %)
-    |> yLine(-totalLength, %, $edge1)
+    |> yLine(length=-totalLength, tag=$edge1)
     // |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
-    |> xLine(totalWidth, %, $edge2)
+    |> xLine(length=totalWidth, tag= $edge2)
     // |> cornerBezierCurves(cornerCurvePoints, rotatedOffset90Func, %)
-    |> yLine(totalLength, %, $edge3)
+    |> yLine(length=totalLength, tag=$edge3)
     // |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
-    |> xLine(-totalWidth, %,$edge4)
+    |> xLine(length=-totalWidth, tag=$edge4)
     // |> cornerBezierCurves(cornerCurvePoints, rotatedOffset270Func, %)
     |> close()
-    |> extrude(length = 10)
+    |> extrude(length = bodyThickness)
     |> fillet(
        radius = cornerCurveRadius*.69,
        tolerance = 0.00001,
@@ -194,4 +236,4 @@ fn simplePhoneBody(x, y, z) {
      )
 }
 
-camera = simplePhoneBody(0,0,totalThickness)
+second = simplePhoneBody(0,0,bodyThickness)
