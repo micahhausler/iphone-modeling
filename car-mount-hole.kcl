@@ -1,0 +1,54 @@
+@settings(defaultLengthUnit = mm, defaultAngleUnit = deg)
+
+
+// XYZ Reference Lines
+// Comment out before exporting solid
+refLineLength=150
+xBaseLine = startSketchOn(offsetPlane(XY, offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> xLine(length=refLineLength)
+yBaseLine = startSketchOn(offsetPlane(XY, offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> yLine(length=refLineLength)
+zBaseLine = startSketchOn(offsetPlane(XZ, offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> yLine(length=refLineLength)
+  
+
+
+phoneHoleWidth = 76.00
+phoneThickness = 19.00
+phoneHoleDepth = 40
+// shellThickness = 3
+
+iPhoneDimensions = {
+  width = 76.00,
+  thickness = 19.00,
+  depth = 40,
+  curveRadius = 2,
+}
+
+
+fn phoneHole(x, y, z, dimensions) {
+  widthWithoutCurves = dimensions.width - (dimensions.curveRadius * 2)
+
+  thicknessWithoutCurves = dimensions.thickness - (dimensions.curveRadius * 2)
+  cornerDegrees = 90
+
+  return startSketchOn(offsetPlane(XY, offset = z))
+    |> startProfileAt([x, y+dimensions.curveRadius], %)
+    |> yLine(length=widthWithoutCurves)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> xLine(length = thicknessWithoutCurves )
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> yLine(length=-widthWithoutCurves)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> xLine( length = -thicknessWithoutCurves )
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> close()
+}
+
+bottom = phoneHole(3,3,0,iPhoneDimensions)
+  |> extrude(length=phoneHoleDepth)
+  |> rotate(roll=0, pitch=-30, yaw=-40)
+

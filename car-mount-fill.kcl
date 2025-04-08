@@ -1,0 +1,104 @@
+@settings(defaultLengthUnit = mm, defaultAngleUnit = deg)
+
+
+// XYZ Reference Lines
+// Comment out before exporting solid
+refLineLength=150
+xBaseLine = startSketchOn(offsetPlane(XY, offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> xLine(length=refLineLength)
+yBaseLine = startSketchOn(offsetPlane(XY, offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> yLine(length=refLineLength)
+zBaseLine = startSketchOn(offsetPlane(XZ, offset = 0))
+  |> startProfileAt([0, 0], %)
+  |> yLine(length=refLineLength)
+  
+
+
+trayCurveRadius = 3
+trayDepth = 58.25
+trayBottomDimensions = {
+  top=113.55,
+  bottom=102.40,
+  side=68.23,
+  curveRadius=trayCurveRadius,
+}
+
+trayTopDimensions = {
+  top=125.5,
+  bottom=113.45,
+  side=79.12,
+  curveRadius=trayCurveRadius,
+}
+
+
+
+fn trayFace(x, y, z, dimensions) {
+  trayTopWithoutCurves = dimensions.top - (dimensions.curveRadius * 2)
+  trayBottomWithoutCurves = dimensions.bottom - (dimensions.curveRadius * 2)
+  trayOffsetShort = (trayTopWithoutCurves-trayBottomWithoutCurves)/2
+  traySideWithoutCurves = dimensions.side - (dimensions.curveRadius * 2)
+  lowerXangle = toDegrees(asin(trayOffsetShort/traySideWithoutCurves))
+  topArcDegrees = 90+lowerXangle
+  bottomArcDegrees = 90-lowerXangle
+
+  return startSketchOn(offsetPlane(XY, offset = z))
+    |> startProfileAt([x, y+dimensions.curveRadius], %)
+    |> yLine(length=trayTopWithoutCurves)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -topArcDegrees }, %)
+    |> angledLineOfXLength({angle = -lowerXangle,length = traySideWithoutCurves }, %)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -bottomArcDegrees }, %)
+    |> yLine(length=-trayBottomWithoutCurves)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -bottomArcDegrees }, %)
+    |> angledLineOfXLength({angle = lowerXangle, length = -traySideWithoutCurves }, %)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -topArcDegrees }, %)
+    |> close()
+}
+
+upperTrayOffset = (trayTopDimensions.top - trayBottomDimensions.top) / 2
+trayBottom = trayFace(3,3,0, trayBottomDimensions)
+trayTop = trayFace(3,3-upperTrayOffset,trayDepth, trayTopDimensions)
+box = loft([trayBottom, trayTop])
+
+
+phoneHoleWidth = 76.00
+phoneThickness = 19.00
+phoneHoleDepth = 40
+// shellThickness = 3
+
+iPhoneDimensions = {
+  width = 76.00,
+  thickness = 19.00,
+  depth = 40,
+  curveRadius = 2,
+}
+
+
+fn phoneHole(x, y, z, dimensions) {
+  widthWithoutCurves = dimensions.width - (dimensions.curveRadius * 2)
+
+  thicknessWithoutCurves = dimensions.thickness - (dimensions.curveRadius * 2)
+  cornerDegrees = 90
+
+  return startSketchOn(offsetPlane(XY, offset = z))
+    |> startProfileAt([x, y+dimensions.curveRadius], %)
+    |> yLine(length=widthWithoutCurves)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> xLine(length = thicknessWithoutCurves )
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> yLine(length=-widthWithoutCurves)
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> xLine( length = -thicknessWithoutCurves )
+    |> tangentialArc({ radius = dimensions.curveRadius, offset = -cornerDegrees }, %)
+    |> close()
+}
+
+bottom = phoneHole(
+  (trayTopDimensions.side)/5,
+  (trayTopDimensions.top-phoneHoleWidth)/2,
+  trayDepth*2/7,
+  iPhoneDimensions)
+  |> extrude(length=phoneHoleDepth)
+  |> rotate(roll=0, pitch=-20, yaw=-30)
+
