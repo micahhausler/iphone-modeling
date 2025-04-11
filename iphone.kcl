@@ -5,15 +5,15 @@
 
 // XYZ Reference Lines
 // Comment out before exporting solid
-// xBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
+// xBaseLine = startSketchOn(offsetPlane(XY, offset = 0))
 // |> startProfileAt([0, 0], %)
-// |> xLine(100, %)
-// yBaseLine = startSketchOn(offsetPlane('XY', offset = 0))
+// |> xline(length=100)
+// yBaseLine = startSketchOn(offsetPlane(XY, offset = 0))
 // |> startProfileAt([0, 0], %)
-// |> yLine(100, %)
-// zBaseLine = startSketchOn(offsetPlane('XZ', offset = 0))
+// |> yline(length=100)
+// zBaseLine = startSketchOn(offsetPlane(XZ, offset = 0))
 // |> startProfileAt([0, 0], %)
-// |> yLine(100, %)
+// |> yline(length=100)
 
 cornerCurveRadius = 19.23
 totalWidth = 71.45
@@ -147,7 +147,7 @@ usbcSideLength = usbcWidth-usbcDiameter
 
 // generate iphone body
 fn iphoneBody(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x, y], %)
     |> yLine(length=-lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
@@ -166,18 +166,18 @@ fn iphoneBody(x, y, z) {
 }
 
 fn usbcHole(x, y, z) {
-  return startSketchOn(offsetPlane('XZ', offset = y))
+  return startSketchOn(offsetPlane(XZ, offset = y))
     |> startProfileAt([x, z], %)
     |> xLine(length=usbcSideLength)
-    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> tangentialArc({radius=usbcRadius, offset=180 }, %)
     |> xLine(length=-usbcSideLength)
-    |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
+    |> tangentialArc({radius=usbcRadius, offset=180 }, %)
     |> close()
 }
 
 fn usbcBox(x,y,z){
   cutout = usbcHole(x+usbcRadius,y,z+(bodyThickness-usbcDiameter)/2)
-  return startSketchOn(offsetPlane('XZ', offset = y))
+  return startSketchOn(offsetPlane(XZ, offset = y))
     |> startProfileAt([x, z], %)
     |> xLine(length=usbcWidth)
     |> yLine(length=bodyThickness)
@@ -190,7 +190,7 @@ fn usbcBox(x,y,z){
 
 // center fill
 fn centerBodyFill(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x, y], %)
     |> xLine(length=widthWithoutCurve)
     |> yLine(length=-lengthWithoutCurve)
@@ -284,7 +284,7 @@ fn edgeCurve(x, y, z, zPointModifierFunc) {
     return [pair[0], zPointModifierFunc(pair[1])]
   })
   rad = cornerCurveRadius - edgeCurveWidth
-  return startSketchOn(offsetPlane('XZ', offset = y))
+  return startSketchOn(offsetPlane(XZ, offset = y))
     |> startProfileAt([x, z], %)
     |> edgeBezCurves(points, offsetFunc)
     |> xLine(length=-rad)
@@ -313,7 +313,7 @@ fn edgeCornerCurveGenerator(offset) {
     basePoints = curvePointModifierFunc(cornerCurvePoints)
     offsetCurvePoints = offsetPoints(basePoints, offset.x, offset.y)
     sp = xyOffset(    rotatedOffset180Func(    negativeXList(offsetCurvePoints), 0, segment * 3), offset.x, offset.y)
-    sweepPath = startSketchOn(offsetPlane('XY', offset = offset.z))
+    sweepPath = startSketchOn(offsetPlane(XY, offset = offset.z))
       |> startProfileAt(sp, %)
       |> generateBezierCurve(negativeXList(offsetCurvePoints), rotatedOffset180Func, segment * 3)
 
@@ -405,7 +405,7 @@ fn edgeLineSketch(edgeArgs) {
 }
 
 upperLeftEdge = edgeLineSketch({
-  plane = 'XZ',
+  plane = XZ,
   length = lengthWithoutCurve,
   x = 0,
   y = cornerCurveRadius,
@@ -416,7 +416,7 @@ upperLeftEdge = edgeLineSketch({
   xyRotationFunc = identity
 })
 lowerLeftEdge = edgeLineSketch({
-  plane = 'XZ',
+  plane = XZ,
   length = lengthWithoutCurve,
   x = 0,
   y = cornerCurveRadius,
@@ -427,7 +427,7 @@ lowerLeftEdge = edgeLineSketch({
   xyRotationFunc = identity
 })
 upperRightEdge = edgeLineSketch({
-  plane = 'XZ',
+  plane = XZ,
   length = lengthWithoutCurve,
   x = totalWidth,
   y = cornerCurveRadius,
@@ -438,7 +438,7 @@ upperRightEdge = edgeLineSketch({
   xyRotationFunc = identity
 })
 lowerRightEdge = edgeLineSketch({
-  plane = 'XZ',
+  plane = XZ,
   length = lengthWithoutCurve,
   x = totalWidth,
   y = cornerCurveRadius,
@@ -450,7 +450,7 @@ lowerRightEdge = edgeLineSketch({
 })
 // for YZ planes, 'x' and 'y' are inverted, as are modifier funcs
 upperTopEdge = edgeLineSketch({
-  plane = 'YZ',
+  plane = YZ,
   length = widthWithoutCurve,
   x = 0,
   y = cornerCurveRadius,
@@ -461,7 +461,7 @@ upperTopEdge = edgeLineSketch({
   xyRotationFunc = identity
 })
 lowerTopEdge = edgeLineSketch({
-  plane = 'YZ',
+  plane = YZ,
   length = widthWithoutCurve,
   x = 0,
   y = cornerCurveRadius,
@@ -472,7 +472,7 @@ lowerTopEdge = edgeLineSketch({
   xyRotationFunc = identity
 })
 upperBottomEdge = edgeLineSketch({
-  plane = 'YZ',
+  plane = YZ,
   length = widthWithoutCurve,
   x = -totalLength,
   y = cornerCurveRadius,
@@ -483,7 +483,7 @@ upperBottomEdge = edgeLineSketch({
   xyRotationFunc = identity
 })
 lowerBottomEdge = edgeLineSketch({
-  plane = 'YZ',
+  plane = YZ,
   length = widthWithoutCurve,
   x = -totalLength,
   y = cornerCurveRadius,
@@ -522,7 +522,7 @@ cameraLensDiameter = 16.02
 
 cameraLensRadius = cameraLensDiameter / 2
 fn cameraBody(x, y, z) {
-  cameraBase = startSketchOn(offsetPlane('XY', offset = z))
+  cameraBase = startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([
          x + cameraEdgeOffset,
          y + cornerCurveRadius - cameraBaseRadius - cameraEdgeOffset
@@ -556,7 +556,7 @@ fn cameraBody(x, y, z) {
 
   midPlateauCurveXOffset = cameraPlateauOffset - ((cameraBaseWidth - cameraPlateauWidth) / 4)
 
-  cameraPlateau0 = startSketchOn(offsetPlane('XY', offset = z + plateauCurveMidSketchHeight))
+  cameraPlateau0 = startSketchOn(offsetPlane(XY, offset = z + plateauCurveMidSketchHeight))
     |> startProfileAt([
          x + midPlateauCurveXOffset,
          y + cornerCurveRadius - cameraBaseRadius - midPlateauCurveXOffset
@@ -583,7 +583,7 @@ fn cameraBody(x, y, z) {
        }, %)
     |> close()
 
-  cameraPlateau = startSketchOn(offsetPlane('XY', offset = z + cameraPlateauThickness))
+  cameraPlateau = startSketchOn(offsetPlane(XY, offset = z + cameraPlateauThickness))
     |> startProfileAt([
          x + cameraPlateauOffset,
          y + cornerCurveRadius - cameraBaseRadius - cameraPlateauOffset
@@ -619,7 +619,7 @@ fn cameraBody(x, y, z) {
 }
 
 fn lenses(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> circle(
          center = [x, y],
          radius = cameraLensRadius
@@ -653,12 +653,12 @@ volumeButtonLengthWithoutCurves = 5.60 * 2 - (buttonRadius * 2)
 volumeUpButtonDistanceFromTop = 48.23 - 5.60
 volumeDownButtonDistanceFromTop = 62.43 - 5.60
 fn buttonSketch(x, y, z, depth, buttonLength) {
-  squareSketch = startSketchOn(offsetPlane('YZ', offset = z))
+  squareSketch = startSketchOn(offsetPlane(YZ, offset = z))
     |> startProfileAt([x, y], %)
     |> xLine(length=-buttonLength)
-    |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
+    |> tangentialArc({radius=buttonRadius, offset=180 }, %)
     |> xLine(length=buttonLength)
-    |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
+    |> tangentialArc({radius=buttonRadius, offset=180 }, %)
     |> close()
     |> extrude(%, length = depth)
   return squareSketch

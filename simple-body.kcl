@@ -119,7 +119,7 @@ usbcSideLength = usbcWidth-usbcDiameter
 
 // generate iphone body
 fn iphoneBody(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x, y], %)
     |> yLine(length=-lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
@@ -140,7 +140,7 @@ fn iphoneBody(x, y, z) {
 phoneBody = iphoneBody(0, 0, 0)
 
 fn usbcHole(x, y, z) {
-  return startSketchOn(offsetPlane('XZ', offset = y))
+  return startSketchOn(offsetPlane(XZ, offset = y))
     |> startProfileAt([x, z], %)
     |> xLine(length=usbcSideLength)
     |> tangentialArc({ radius = usbcRadius, offset = 180 }, %)
@@ -151,7 +151,7 @@ fn usbcHole(x, y, z) {
 
 fn usbcBox(x,y,z){
   cutout = usbcHole(x+usbcRadius,y,z+(bodyThickness-usbcDiameter)/2)
-  return startSketchOn(offsetPlane('XZ', offset = y))
+  return startSketchOn(offsetPlane(XZ, offset = y))
     |> startProfileAt([x, z], %)
     |> xLine(length=usbcWidth)
     |> yLine(length=bodyThickness)
@@ -182,7 +182,7 @@ cameraLensRadius = 16.02
 /*
 // generate camera body
 fn cameraBody(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x+cameraEdgeOffset, y+cornerCurveRadius-cameraEdgeOffset], %)
     |> yLine(-cameraPlateauWallWidth, %, $cameraEdge1)
     // |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
@@ -211,7 +211,7 @@ camera = cameraBody(0,0,totalThickness)
 
 
 fn simplePhoneBody(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x, y+cornerCurveRadius], %)
     |> yLine(length=-totalLength, tag=$edge1)
     // |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)

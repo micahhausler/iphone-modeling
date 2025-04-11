@@ -11,7 +11,7 @@ I may be doing a bunch of this wrong, and in any of those cases would love to be
 			segmentStart = segment * 3
 			startPoint0 = rotationFunc(  pointFunc(cornerCurvePoints), 0, segmentStart)
 			startPoint = startPointOffsetFunc(startPoint0)
-			sweepPath = startSketchOn(offsetPlane('XY', offset = bodyThickness))
+			sweepPath = startSketchOn(offsetPlane(XY, offset = bodyThickness))
 				|> startProfileAt(startPoint, %)
 				|> generateBezierCurve(pointFunc(cornerCurvePoints), rotationFunc, segmentStart, %)
 			return edgeCurves(pointFunc(moreEdgePoints), startPoint[0], bodyThickness, -startPoint[1])

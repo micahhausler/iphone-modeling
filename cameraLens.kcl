@@ -104,15 +104,15 @@ fn cornerBezierCurves(pts, offsetFunc, z) {
 
 // generate iphone body
 fn iphoneBody(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z))
+  return startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x, y], %)
-    |> yLine(-lengthWithoutCurve, %)
+    |> yLine(length=-lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, offsetFunc, %)
-    |> xLine(widthWithoutCurve, %)
+    |> xLine(length=widthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset90Func, %)
-    |> yLine(lengthWithoutCurve, %)
+    |> yLine(length=lengthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset180Func, %)
-    |> xLine(-widthWithoutCurve, %)
+    |> xLine(length=-widthWithoutCurve)
     |> cornerBezierCurves(cornerCurvePoints, rotatedOffset270Func, %)
     |> close()
     |> extrude(length = totalThickness)
@@ -150,16 +150,16 @@ cameraLensRadius = cameraLensDiameter/2
 
 
 fn cameraBody(x, y, z) {
-  cameraBase = startSketchOn(offsetPlane('XY', offset = z))
+  cameraBase = startSketchOn(offsetPlane(XY, offset = z))
     |> startProfileAt([x+cameraEdgeOffset, y+cornerCurveRadius-cameraBaseRadius-cameraEdgeOffset], %)
-    |> yLine(-cameraBaseLengthWithoutCurves, %, $cameraEdge1)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(cameraBaseWidthWithoutCurves, %,  $cameraEdge2)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> yLine(cameraBaseLengthWithoutCurves, %, $cameraEdge3)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(-cameraBaseWidthWithoutCurves, %,  $cameraEdge4)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(length=-cameraBaseLengthWithoutCurves, tag=$cameraEdge1)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> xLine(length=cameraBaseWidthWithoutCurves, tag= $cameraEdge2)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> yLine(length=cameraBaseLengthWithoutCurves, tag=$cameraEdge3)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> xLine(length=-cameraBaseWidthWithoutCurves, tag= $cameraEdge4)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
     |> close()
 
   // height/width/length difference picked manually, measurements not provided
@@ -169,28 +169,28 @@ fn cameraBody(x, y, z) {
 
   midPlateauCurveXOffset = cameraPlateauOffset - (cameraBaseWidth - cameraPlateauWidth)/4
 
-  cameraPlateau0 =startSketchOn(offsetPlane('XY', offset = z+plateauCurveMidSketchHeight))
+  cameraPlateau0 =startSketchOn(offsetPlane(XY, offset = z+plateauCurveMidSketchHeight))
     |> startProfileAt([x+midPlateauCurveXOffset, y+cornerCurveRadius-cameraBaseRadius-midPlateauCurveXOffset], %)
-    |> yLine(-plateauCurveMidSketchLength, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(plateauCurveMidSketchWidth, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> yLine(plateauCurveMidSketchLength, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(-plateauCurveMidSketchWidth, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(length=-plateauCurveMidSketchLength)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> xLine(length=plateauCurveMidSketchWidth)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> yLine(length=plateauCurveMidSketchLength)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> xLine(length=-plateauCurveMidSketchWidth)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
     |> close()
 
-    cameraPlateau =startSketchOn(offsetPlane('XY', offset = z+cameraPlateauThickness))
+    cameraPlateau =startSketchOn(offsetPlane(XY, offset = z+cameraPlateauThickness))
     |> startProfileAt([x+cameraPlateauOffset, y+cornerCurveRadius-cameraBaseRadius-cameraPlateauOffset], %)
-    |> yLine(-cameraPlateauLengthWithoutCurves, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(cameraPlateauWidthWithoutCurves, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> yLine(cameraPlateauLengthWithoutCurves, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
-    |> xLine(-cameraPlateauWidthWithoutCurves, %)
-    |> tangentialArc({ radius = cameraBaseRadius, offset = 90 }, %)
+    |> yLine(length=-cameraPlateauLengthWithoutCurves)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> xLine(length=cameraPlateauWidthWithoutCurves)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> yLine(length=cameraPlateauLengthWithoutCurves)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
+    |> xLine(length=-cameraPlateauWidthWithoutCurves)
+    |> tangentialArc({radius=cameraBaseRadius, offset=90}, %)
     |> close()
 
     lofted = loft(
@@ -205,11 +205,11 @@ fn cameraBody(x, y, z) {
 }
 
 fn lenses(x, y, z) {
-  return startSketchOn(offsetPlane('XY', offset = z+totalThickness+cameraPlateauThickness))
-    |> circle({
+  return startSketchOn(offsetPlane(XY, offset = z+totalThickness+cameraPlateauThickness))
+    |> circle(
       center = [x, y+cornerCurveRadius],
       radius = cameraLensRadius,
-    }, %)
+    )
     |> extrude(%, length = cameraThickness)
 }
 
@@ -248,16 +248,16 @@ volumeDownButtonDistanceFromTop = 62.43 - 5.60
 fn buttonSketch(x,y,z, depth, buttonLength) {
   squareSketch = startSketchOn(
     offsetPlane(
-      'YZ',
+      YZ,
       offset = z ))
     |> startProfileAt([
       x,
       y,
       ], %)
-    |> xLine(-buttonLength, %)
-    |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
-    |> xLine(buttonLength, %)
-    |> tangentialArc({ radius = buttonRadius, offset = 180 }, %)
+    |> xLine(length=-buttonLength)
+    |> tangentialArc({radius=buttonRadius, offset=180}, %)
+    |> xLine(length=buttonLength)
+    |> tangentialArc({radius=buttonRadius, offset=180}, %)
     |> close()
     |> extrude(%, length = depth)
   return squareSketch
